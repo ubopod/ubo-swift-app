@@ -12,7 +12,40 @@ struct WatchDeviceView: View {
     @Environment(DeviceViewModel.self) private var viewModel
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // Header with title and nav buttons
+            HStack {
+                if showBackButton {
+                    Button {
+                        Task { try? await viewModel.client.goBack() }
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Spacer()
+
+                Text(navigationTitle)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+
+                Spacer()
+
+                Button {
+                    Task { try? await viewModel.client.goHome() }
+                } label: {
+                    Image(systemName: "house")
+                        .font(.caption2)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+
+            // Content
             Group {
                 switch viewModel.currentView {
                 case .home(let data):
@@ -27,42 +60,19 @@ struct WatchDeviceView: View {
                     loadingView
                 }
             }
-            .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    if showBackButton {
-                        Button {
-                            Task { try? await viewModel.client.goBack() }
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.caption)
-                        }
-                    }
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { try? await viewModel.client.goHome() }
-                    } label: {
-                        Image(systemName: "house")
-                            .font(.caption)
-                    }
-                }
-            }
         }
     }
 
     private var navigationTitle: String {
         switch viewModel.currentView {
         case .home:
-            return "Home"
+            return "Device"
         case .menu(let data):
-            return data.title.isEmpty ? "Menu" : String(data.title.prefix(12))
+            return data.title.isEmpty ? "Menu" : String(data.title.prefix(10))
         case .notification:
             return "Alert"
         case .application(let data):
-            return String(data.applicationId.prefix(12))
+            return String(data.applicationId.prefix(10))
         case .none:
             return "Device"
         }
