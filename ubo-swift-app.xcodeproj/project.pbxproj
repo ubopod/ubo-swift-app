@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		3B12D7EE2F2AA2BD00C9B856 /* ubo Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 3B12D7CE2F2AA2BD00C9B856 /* ubo Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3BUBOSWIFT0001 /* UboSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3BUBOSWIFT0002 /* UboSwift */; };
+		3BUBOSWIFT0003 /* UboSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3BUBOSWIFT0004 /* UboSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +71,7 @@
 		3B2BFCF52F2A9EB8009F6CB1 /* ubo-swift-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ubo-swift-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B2BFD022F2A9EB9009F6CB1 /* ubo-swift-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ubo-swift-appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B2BFD0C2F2A9EB9009F6CB1 /* ubo-swift-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ubo-swift-appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BUBOSWIFT0005 /* ubo-swift-grpc */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "ubo-swift-grpc"; path = "../ubo-swift-grpc"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -109,6 +112,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3BUBOSWIFT0003 /* UboSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,6 +134,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3BUBOSWIFT0001 /* UboSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -159,6 +164,7 @@
 				3B12D7CF2F2AA2BD00C9B856 /* ubo Watch App */,
 				3B12D7DD2F2AA2BD00C9B856 /* ubo Watch AppTests */,
 				3B12D7E72F2AA2BD00C9B856 /* ubo Watch AppUITests */,
+				3BUBOSWIFT0006 /* Packages */,
 				3B2BFCF62F2A9EB8009F6CB1 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -174,6 +180,14 @@
 				3B12D7E42F2AA2BD00C9B856 /* ubo Watch AppUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3BUBOSWIFT0006 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				3BUBOSWIFT0005 /* ubo-swift-grpc */,
+			);
+			name = Packages;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -196,6 +210,7 @@
 			);
 			name = "ubo Watch App";
 			packageProductDependencies = (
+				3BUBOSWIFT0004 /* UboSwift */,
 			);
 			productName = "ubo Watch App";
 			productReference = 3B12D7CE2F2AA2BD00C9B856 /* ubo Watch App.app */;
@@ -266,6 +281,7 @@
 			);
 			name = "ubo-swift-app";
 			packageProductDependencies = (
+				3BUBOSWIFT0002 /* UboSwift */,
 			);
 			productName = "ubo-swift-app";
 			productReference = 3B2BFCF52F2A9EB8009F6CB1 /* ubo-swift-app.app */;
@@ -360,6 +376,9 @@
 			);
 			mainGroup = 3B2BFCEC2F2A9EB8009F6CB1;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3BUBOSWIFT0007 /* XCLocalSwiftPackageReference "../ubo-swift-grpc" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3B2BFCF62F2A9EB8009F6CB1 /* Products */;
 			projectDirPath = "";
@@ -501,9 +520,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = ubo;
+				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
+				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "ubopod.ubo-swift-app";
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
@@ -534,9 +556,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = ubo;
+				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
+				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "ubopod.ubo-swift-app";
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
@@ -768,13 +793,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "ubo-swift-app/ubo-swift-app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = ubo;
+				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -811,13 +841,18 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "ubo-swift-app/ubo-swift-app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = ubo;
+				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -1014,6 +1049,24 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		3BUBOSWIFT0007 /* XCLocalSwiftPackageReference "../ubo-swift-grpc" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../ubo-swift-grpc";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3BUBOSWIFT0002 /* UboSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = UboSwift;
+		};
+		3BUBOSWIFT0004 /* UboSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = UboSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3B2BFCED2F2A9EB8009F6CB1 /* Project object */;
 }
