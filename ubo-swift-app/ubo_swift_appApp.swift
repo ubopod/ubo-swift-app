@@ -6,12 +6,16 @@
 //
 
 import SwiftUI
+import UboSwift
 
 @main
-struct ubo_swift_appApp: App {
+struct UboSwiftApp: App {
+    @State private var viewModel = DeviceViewModel()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(viewModel)
         }
     }
 }
