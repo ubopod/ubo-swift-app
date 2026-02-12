@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3B12D7EE2F2AA2BD00C9B856 /* ubo Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 3B12D7CE2F2AA2BD00C9B856 /* ubo Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3B12D7EE2F2AA2BD00C9B856 /* ubo Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 3B12D7CE2F2AA2BD00C9B856 /* ubo Watch App.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3BD215172F3D4705001771F9 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD215162F3D4705001771F9 /* WidgetKit.framework */; };
+		3BD215192F3D4705001771F9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD215182F3D4705001771F9 /* SwiftUI.framework */; };
+		3BD215262F3D4705001771F9 /* UboWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3BD215142F3D4705001771F9 /* UboWidgetsExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3BUBOSWIFT0001 /* UboSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3BUBOSWIFT0002 /* UboSwift */; };
 		3BUBOSWIFT0003 /* UboSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3BUBOSWIFT0004 /* UboSwift */; };
 /* End PBXBuildFile section */
@@ -48,6 +51,13 @@
 			remoteGlobalIDString = 3B2BFCF42F2A9EB8009F6CB1;
 			remoteInfo = "ubo-swift-app";
 		};
+		3BD215242F3D4705001771F9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3B2BFCED2F2A9EB8009F6CB1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3BD215132F3D4705001771F9;
+			remoteInfo = UboWidgetsExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -62,6 +72,17 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3BD2152B2F3D4705001771F9 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				3BD215262F3D4705001771F9 /* UboWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -71,8 +92,22 @@
 		3B2BFCF52F2A9EB8009F6CB1 /* ubo-swift-app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ubo-swift-app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B2BFD022F2A9EB9009F6CB1 /* ubo-swift-appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ubo-swift-appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B2BFD0C2F2A9EB9009F6CB1 /* ubo-swift-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ubo-swift-appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BD215142F3D4705001771F9 /* UboWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = UboWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3BD215162F3D4705001771F9 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		3BD215182F3D4705001771F9 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		3BD215322F3D4FA3001771F9 /* UboWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = UboWidgetsExtension.entitlements; sourceTree = "<group>"; };
 		3BUBOSWIFT0005 /* ubo-swift-grpc */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "ubo-swift-grpc"; path = "../ubo-swift-grpc"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3BD215272F3D4705001771F9 /* Exceptions for "UboWidgets" folder in "UboWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 3BD215132F3D4705001771F9 /* UboWidgetsExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3B12D7CF2F2AA2BD00C9B856 /* ubo Watch App */ = {
@@ -103,6 +138,14 @@
 		3B2BFD0F2F2A9EB9009F6CB1 /* ubo-swift-appUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "ubo-swift-appUITests";
+			sourceTree = "<group>";
+		};
+		3BD2151A2F3D4705001771F9 /* UboWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3BD215272F3D4705001771F9 /* Exceptions for "UboWidgets" folder in "UboWidgetsExtension" target */,
+			);
+			path = UboWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -152,12 +195,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3BD215112F3D4705001771F9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3BD215192F3D4705001771F9 /* SwiftUI.framework in Frameworks */,
+				3BD215172F3D4705001771F9 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		3B2BFCEC2F2A9EB8009F6CB1 = {
 			isa = PBXGroup;
 			children = (
+				3BD215322F3D4FA3001771F9 /* UboWidgetsExtension.entitlements */,
 				3B2BFCF72F2A9EB8009F6CB1 /* ubo-swift-app */,
 				3B2BFD052F2A9EB9009F6CB1 /* ubo-swift-appTests */,
 				3B2BFD0F2F2A9EB9009F6CB1 /* ubo-swift-appUITests */,
@@ -165,6 +218,8 @@
 				3B12D7DD2F2AA2BD00C9B856 /* ubo Watch AppTests */,
 				3B12D7E72F2AA2BD00C9B856 /* ubo Watch AppUITests */,
 				3BUBOSWIFT0006 /* Packages */,
+				3BD2151A2F3D4705001771F9 /* UboWidgets */,
+				3BD215152F3D4705001771F9 /* Frameworks */,
 				3B2BFCF62F2A9EB8009F6CB1 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -178,8 +233,18 @@
 				3B12D7CE2F2AA2BD00C9B856 /* ubo Watch App.app */,
 				3B12D7DA2F2AA2BD00C9B856 /* ubo Watch AppTests.xctest */,
 				3B12D7E42F2AA2BD00C9B856 /* ubo Watch AppUITests.xctest */,
+				3BD215142F3D4705001771F9 /* UboWidgetsExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3BD215152F3D4705001771F9 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3BD215162F3D4705001771F9 /* WidgetKit.framework */,
+				3BD215182F3D4705001771F9 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		3BUBOSWIFT0006 /* Packages */ = {
@@ -270,11 +335,13 @@
 				3B2BFCF22F2A9EB8009F6CB1 /* Frameworks */,
 				3B2BFCF32F2A9EB8009F6CB1 /* Resources */,
 				3B12D7EF2F2AA2BD00C9B856 /* Embed Watch Content */,
+				3BD2152B2F3D4705001771F9 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				3B12D7ED2F2AA2BD00C9B856 /* PBXTargetDependency */,
+				3BD215252F3D4705001771F9 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				3B2BFCF72F2A9EB8009F6CB1 /* ubo-swift-app */,
@@ -333,6 +400,28 @@
 			productReference = 3B2BFD0C2F2A9EB9009F6CB1 /* ubo-swift-appUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		3BD215132F3D4705001771F9 /* UboWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3BD215282F3D4705001771F9 /* Build configuration list for PBXNativeTarget "UboWidgetsExtension" */;
+			buildPhases = (
+				3BD215102F3D4705001771F9 /* Sources */,
+				3BD215112F3D4705001771F9 /* Frameworks */,
+				3BD215122F3D4705001771F9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3BD2151A2F3D4705001771F9 /* UboWidgets */,
+			);
+			name = UboWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = UboWidgetsExtension;
+			productReference = 3BD215142F3D4705001771F9 /* UboWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -365,6 +454,9 @@
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = 3B2BFCF42F2A9EB8009F6CB1;
 					};
+					3BD215132F3D4705001771F9 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 				};
 			};
 			buildConfigurationList = 3B2BFCF02F2A9EB8009F6CB1 /* Build configuration list for PBXProject "ubo-swift-app" */;
@@ -390,6 +482,7 @@
 				3B12D7CD2F2AA2BD00C9B856 /* ubo Watch App */,
 				3B12D7D92F2AA2BD00C9B856 /* ubo Watch AppTests */,
 				3B12D7E32F2AA2BD00C9B856 /* ubo Watch AppUITests */,
+				3BD215132F3D4705001771F9 /* UboWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -431,6 +524,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		3B2BFD0A2F2A9EB9009F6CB1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3BD215122F3D4705001771F9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -482,6 +582,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		3BD215102F3D4705001771F9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -497,6 +604,7 @@
 		};
 		3B12D7ED2F2AA2BD00C9B856 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilter = ios;
 			target = 3B12D7CD2F2AA2BD00C9B856 /* ubo Watch App */;
 			targetProxy = 3B12D7EC2F2AA2BD00C9B856 /* PBXContainerItemProxy */;
 		};
@@ -509,6 +617,12 @@
 			isa = PBXTargetDependency;
 			target = 3B2BFCF42F2A9EB8009F6CB1 /* ubo-swift-app */;
 			targetProxy = 3B2BFD0D2F2A9EB9009F6CB1 /* PBXContainerItemProxy */;
+		};
+		3BD215252F3D4705001771F9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = ios;
+			target = 3BD215132F3D4705001771F9 /* UboWidgetsExtension */;
+			targetProxy = 3BD215242F3D4705001771F9 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -592,6 +706,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ubopod.ubo-Watch-AppTests";
@@ -614,6 +729,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ubopod.ubo-Watch-AppTests";
@@ -636,6 +752,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ubopod.ubo-Watch-AppUITests";
@@ -657,6 +774,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ubopod.ubo-Watch-AppUITests";
@@ -794,6 +912,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "ubo-swift-app/ubo-swift-app.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 94M4XX8GM6;
@@ -822,6 +941,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ubopod.ubo-swift-app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -842,6 +962,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "ubo-swift-app/ubo-swift-app.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 94M4XX8GM6;
@@ -870,6 +991,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ubopod.ubo-swift-app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -890,6 +1012,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -915,6 +1038,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -939,6 +1063,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -963,6 +1088,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -979,6 +1105,73 @@
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				TEST_TARGET_NAME = "ubo-swift-app";
 				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+		3BD215292F3D4705001771F9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = UboWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = UboWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = UboWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "ubopod.ubo-swift-app.UboWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3BD2152A2F3D4705001771F9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = UboWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94M4XX8GM6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = UboWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = UboWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "ubopod.ubo-swift-app.UboWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -1044,6 +1237,15 @@
 			buildConfigurations = (
 				3B2BFD1D2F2A9EB9009F6CB1 /* Debug */,
 				3B2BFD1E2F2A9EB9009F6CB1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3BD215282F3D4705001771F9 /* Build configuration list for PBXNativeTarget "UboWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3BD215292F3D4705001771F9 /* Debug */,
+				3BD2152A2F3D4705001771F9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
