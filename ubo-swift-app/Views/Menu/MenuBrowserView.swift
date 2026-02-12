@@ -22,7 +22,7 @@ struct MenuBrowserView: View {
             }
             .navigationTitle(navigationTitle)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button {
                         Task {
                             try? await viewModel.client.goBack()
@@ -32,7 +32,7 @@ struct MenuBrowserView: View {
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button {
                         Task {
                             try? await viewModel.client.goHome()
@@ -90,7 +90,9 @@ struct MenuBrowserView: View {
                 }
             }
         }
+        #if os(iOS)
         .listStyle(.insetGrouped)
+        #endif
         .refreshable {
             // Request a display redraw to refresh the menu
             try? await viewModel.client.requestDisplayRedraw()

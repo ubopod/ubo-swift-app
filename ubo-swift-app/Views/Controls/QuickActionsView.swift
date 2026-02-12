@@ -218,7 +218,9 @@ struct VolumeControlSheet: View {
             }
             .padding()
             .navigationTitle("Volume")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }

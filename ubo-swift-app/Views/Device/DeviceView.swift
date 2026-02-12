@@ -28,9 +28,11 @@ struct DeviceView: View {
                 }
             }
             .navigationTitle(navigationTitle)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     if showBackButton {
                         Button {
                             triggerHaptic()
@@ -41,7 +43,7 @@ struct DeviceView: View {
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button {
                         triggerHaptic()
                         Task { try? await viewModel.client.goHome() }
@@ -289,7 +291,9 @@ struct MenuDeviceView: View {
                 }
             }
         }
+        #if os(iOS)
         .listStyle(.insetGrouped)
+        #endif
         .refreshable {
             try? await viewModel.client.requestDisplayRedraw()
         }

@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import WidgetKit
 import UboSwift
 
 @MainActor
@@ -28,6 +29,7 @@ class DeviceViewModel {
             .sink { [weak self] state in
                 self?.isConnecting = state.isConnecting
                 self?.isConnected = state.isConnected
+                self?.updateWidgetData()
             }
             .store(in: &cancellables)
 
@@ -60,9 +62,33 @@ class DeviceViewModel {
                     self?.cachedCpuPercent = stats.cpuPercent
                     self?.cachedRamPercent = stats.ramPercent
                     self?.cachedTemperature = stats.temperature
+                    self?.updateWidgetData()
                 }
             }
             .store(in: &cancellables)
+    }
+
+    /// Last time widget data was updated
+    private var lastWidgetUpdate: Date = .distantPast
+
+    /// Update shared data for widgets (throttled to every 5 seconds)
+    private func updateWidgetData() {
+        let now = Date()
+        guard now.timeIntervalSince(lastWidgetUpdate) >= 5 else { return }
+        lastWidgetUpdate = now
+
+        let sharedStats = SharedSystemStats(
+            cpuPercent: cachedCpuPercent,
+            ramPercent: cachedRamPercent,
+            temperature: cachedTemperature,
+            isConnected: isConnected,
+            deviceHost: savedHost
+        )
+        sharedStats.save()
+        print("[Widget] Saved stats: CPU=\(cachedCpuPercent)%, RAM=\(cachedRamPercent)%, Connected=\(isConnected)")
+
+        // Reload widget timelines
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // Persisted settings
