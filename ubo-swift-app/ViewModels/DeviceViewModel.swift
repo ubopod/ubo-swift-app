@@ -7,6 +7,7 @@ import UboSwift
 @Observable
 class DeviceViewModel {
     let client = UboClient()
+    let cameraManager = CameraManager()
 
     // Observable state - updated from client
     private(set) var isConnecting: Bool = false
@@ -21,6 +22,7 @@ class DeviceViewModel {
     private(set) var cachedTemperature: Float?
 
     private var cancellables = Set<AnyCancellable>()
+    private var cameraObservationTask: Task<Void, Never>?
 
     init() {
         // Observe client's published properties
@@ -157,6 +159,9 @@ class DeviceViewModel {
         try await client.connect(host: host, port: port, subscribeToDisplay: false)
         client.startViewSubscription()
         client.startStatsSubscription()
+        client.startCameraSubscription()
+        cameraManager.configure(client: client)
+        startCameraObservation()
     }
 
     func connectWithSavedSettings() async throws {
@@ -165,6 +170,30 @@ class DeviceViewModel {
     }
 
     func disconnect() async {
+        cameraObservationTask?.cancel()
+        cameraObservationTask = nil
+        cameraManager.stopCamera()
         await client.disconnect()
+    }
+
+    // MARK: - Camera Observation
+
+    private func startCameraObservation() {
+        cameraObservationTask?.cancel()
+        cameraObservationTask = Task { [weak self] in
+            guard let self else { return }
+            var wasActive = false
+
+            // Observe client.isCameraViewfinderActive changes
+            for await isActive in self.client.$isCameraViewfinderActive.values {
+                guard !Task.isCancelled else { break }
+                if isActive && !wasActive {
+                    self.cameraManager.startCamera()
+                } else if !isActive && wasActive {
+                    self.cameraManager.stopCamera()
+                }
+                wasActive = isActive
+            }
+        }
     }
 }

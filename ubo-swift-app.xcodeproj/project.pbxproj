@@ -639,6 +639,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
 				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses your camera to send images to your Ubo device.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "ubopod.ubo-swift-app";
@@ -675,6 +676,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
 				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses your camera to send images to your Ubo device.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "ubopod.ubo-swift-app";
@@ -923,6 +925,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses your camera to send images to your Ubo device.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -973,6 +976,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses your camera to send images to your Ubo device.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
