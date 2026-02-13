@@ -53,6 +53,22 @@ struct ContentView: View {
                     Label("Settings", systemImage: "gear")
                 }
         }
+        .fullScreenCover(isPresented: .init(
+            get: { viewModel.cameraManager.isActive },
+            set: { newValue in
+                if !newValue {
+                    viewModel.cameraManager.stopCamera()
+                }
+            }
+        )) {
+            CameraOverlayView(
+                session: viewModel.cameraManager.captureSession,
+                pattern: viewModel.client.cameraPattern,
+                onDismiss: {
+                    viewModel.cameraManager.stopCamera()
+                }
+            )
+        }
     }
 
     private var connectingView: some View {
