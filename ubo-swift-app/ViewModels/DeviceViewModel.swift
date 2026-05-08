@@ -23,6 +23,8 @@ class DeviceViewModel {
     private(set) var cachedCpuPercent: Float = 0
     private(set) var cachedRamPercent: Float = 0
     private(set) var cachedTemperature: Float?
+    private(set) var cachedPlaybackVolume: Float?
+    private(set) var cachedIsPlaybackMute: Bool?
 
     private var cancellables = Set<AnyCancellable>()
     private var cameraObservationTask: Task<Void, Never>?
@@ -74,6 +76,8 @@ class DeviceViewModel {
                     self?.cachedCpuPercent = stats.cpuPercent
                     self?.cachedRamPercent = stats.ramPercent
                     self?.cachedTemperature = stats.temperature
+                    self?.cachedPlaybackVolume = stats.playbackVolume
+                    self?.cachedIsPlaybackMute = stats.isPlaybackMute
                     self?.updateWidgetData()
                 }
             }
