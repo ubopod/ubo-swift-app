@@ -240,7 +240,9 @@ struct WatchMenuView: View {
                     .listRowBackground(Color.clear)
             }
 
-            // Menu items
+            // Menu items — render the full list. page_index /
+            // total_pages are GUI-client concerns; the watch
+            // scrolls natively.
             ForEach(data.items.compactMap { $0 }, id: \.key) { item in
                 Button {
                     Task {
@@ -249,34 +251,6 @@ struct WatchMenuView: View {
                 } label: {
                     WatchMenuItemRow(item: item)
                 }
-            }
-
-            // Pagination controls
-            if data.totalPages > 1 {
-                HStack {
-                    Button {
-                        Task { try? await viewModel.client.scrollUp() }
-                    } label: {
-                        Image(systemName: "chevron.up")
-                    }
-                    .disabled(data.pageIndex == 0)
-
-                    Spacer()
-
-                    Text("\(data.pageIndex + 1)/\(data.totalPages)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Button {
-                        Task { try? await viewModel.client.scrollDown() }
-                    } label: {
-                        Image(systemName: "chevron.down")
-                    }
-                    .disabled(data.pageIndex >= data.totalPages - 1)
-                }
-                .listRowBackground(Color.clear)
             }
         }
         .listStyle(.carousel)

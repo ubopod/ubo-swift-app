@@ -315,7 +315,10 @@ struct MenuDeviceView: View {
                 }
             }
 
-            // Menu items
+            // Menu items — render the full list. The Python core's
+            // page_index/total_pages are GUI-client-only concerns
+            // (small fixed display); on touch devices the user
+            // scrolls natively.
             Section {
                 ForEach(data.items.compactMap { $0 }, id: \.key) { item in
                     MenuItemRow(item: item) {
@@ -324,40 +327,6 @@ struct MenuDeviceView: View {
                             try? await viewModel.client.selectMenuItem(label: item.label)
                         }
                     }
-                }
-            }
-
-            // Pagination
-            if data.totalPages > 1 {
-                Section {
-                    HStack {
-                        Button {
-                            triggerHaptic()
-                            Task { try? await viewModel.client.scrollUp() }
-                        } label: {
-                            Image(systemName: "chevron.up.circle.fill")
-                                .font(.title2)
-                        }
-                        .disabled(data.pageIndex == 0)
-
-                        Spacer()
-
-                        Text("Page \(data.pageIndex + 1) of \(data.totalPages)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        Spacer()
-
-                        Button {
-                            triggerHaptic()
-                            Task { try? await viewModel.client.scrollDown() }
-                        } label: {
-                            Image(systemName: "chevron.down.circle.fill")
-                                .font(.title2)
-                        }
-                        .disabled(data.pageIndex >= data.totalPages - 1)
-                    }
-                    .padding(.vertical, 4)
                 }
             }
         }
