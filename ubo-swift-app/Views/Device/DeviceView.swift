@@ -51,11 +51,21 @@ struct DeviceView: View {
                     loadingView
                 }
             }
-            .navigationTitle(navigationTitle)
+            .navigationTitle(splitLeadingGlyph(navigationTitle).label)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    let split = splitLeadingGlyph(navigationTitle)
+                    HStack(spacing: 4) {
+                        if let glyph = split.icon {
+                            IconView(icon: glyph, size: 16)
+                        }
+                        Text(split.label)
+                            .font(.headline)
+                    }
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     if showBackButton {
                         Button {
@@ -224,12 +234,12 @@ struct HomeMenuCard: View {
                 IconView(
                     icon: displayIcon,
                     size: 24,
-                    color: Color(hex: item.color) ?? .accentColor
+                    color: uboIconColor(forHex: item.color, fallback: .accentColor)
                 )
                 .frame(width: 44, height: 44)
                 .background {
                     RoundedRectangle(cornerRadius: 10)
-                        .fill((Color(hex: item.color) ?? .accentColor).opacity(0.15))
+                        .fill(uboIconColor(forHex: item.color, fallback: .accentColor).opacity(0.15))
                 }
 
                 // Label

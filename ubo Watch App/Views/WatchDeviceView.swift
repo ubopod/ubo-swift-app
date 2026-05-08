@@ -44,10 +44,16 @@ struct WatchDeviceView: View {
 
                 Spacer()
 
-                Text(navigationTitle)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .lineLimit(1)
+                let titleSplit = splitLeadingGlyph(navigationTitle)
+                HStack(spacing: 3) {
+                    if let glyph = titleSplit.icon {
+                        IconView(icon: glyph, size: 11)
+                    }
+                    Text(titleSplit.label)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .lineLimit(1)
+                }
 
                 Spacer()
 
@@ -163,7 +169,7 @@ struct WatchHomeView: View {
                         IconView(
                             icon: item.icon.isEmpty ? item.key : item.icon,
                             size: 14,
-                            color: Color(hex: item.color) ?? .accentColor
+                            color: uboIconColor(forHex: item.color, fallback: .accentColor)
                         )
                         .frame(width: 20)
 
@@ -285,7 +291,7 @@ struct WatchMenuItemRow: View {
             IconView(
                 icon: item.icon,
                 size: 14,
-                color: Color(hex: item.color) ?? .accentColor
+                color: uboIconColor(forHex: item.color, fallback: .accentColor)
             )
             .frame(width: 20)
 
