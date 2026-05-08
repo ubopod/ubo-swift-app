@@ -11,8 +11,20 @@ import UboSwift
 struct WatchDeviceView: View {
     @Environment(DeviceViewModel.self) private var viewModel
 
+    private var showsStatusBar: Bool {
+        viewModel.currentView?.showStatusBar ?? false
+    }
+
     var body: some View {
         VStack(spacing: 0) {
+            if showsStatusBar {
+                WatchStatusBarOverlay(
+                    bar: viewModel.statusBar,
+                    cpuPercent: viewModel.cpuPercent,
+                    ramPercent: viewModel.ramPercent,
+                    temperature: viewModel.temperature
+                )
+            }
             // Header with title and nav buttons
             HStack {
                 if showBackButton {
@@ -56,10 +68,23 @@ struct WatchDeviceView: View {
                     WatchNotificationView(data: data)
                 case .application(let data):
                     WatchApplicationView(data: data)
+                case .instruction(let data):
+                    WatchInstructionView(data: data)
+                case .prompt(let data):
+                    WatchPromptView(data: data)
+                case .render(let data):
+                    WatchRenderView(data: data)
                 case .none:
                     loadingView
                 }
             }
+        }
+        .sheet(item: Binding(
+            get: { viewModel.activeInputs.first },
+            set: { _ in /* dismissal goes through provideInput / cancelInput */ }
+        )) { description in
+            WatchInputFormView(description: description)
+                .environment(viewModel)
         }
     }
 
@@ -73,6 +98,12 @@ struct WatchDeviceView: View {
             return "Alert"
         case .application(let data):
             return String(data.applicationId.prefix(10))
+        case .instruction(let data):
+            return data.title.isEmpty ? "Wait" : String(data.title.prefix(10))
+        case .prompt(let data):
+            return data.title.isEmpty ? "Prompt" : String(data.title.prefix(10))
+        case .render(let data):
+            return data.title.isEmpty ? "Render" : String(data.title.prefix(10))
         case .none:
             return "Device"
         }
