@@ -32,6 +32,16 @@ struct WatchStatusBarOverlay: View {
                 }
             }
 
+            if let bar = bar, !bar.icons.isEmpty {
+                ForEach(Array(bar.icons.enumerated()), id: \.offset) { (_, icon) in
+                    IconView(
+                        icon: icon.symbol,
+                        size: 9,
+                        color: Color(hex: icon.color) ?? .secondary
+                    )
+                }
+            }
+
             Spacer()
 
             if let bar, !bar.clock.isEmpty {

@@ -160,10 +160,12 @@ struct WatchHomeView: View {
                     }
                 } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: displayIcon(for: item))
-                            .font(.caption)
-                            .foregroundStyle(Color(hex: item.color) ?? .accentColor)
-                            .frame(width: 20)
+                        IconView(
+                            icon: item.icon.isEmpty ? item.key : item.icon,
+                            size: 14,
+                            color: Color(hex: item.color) ?? .accentColor
+                        )
+                        .frame(width: 20)
 
                         Text(displayLabel(for: item))
                             .font(.caption)
@@ -280,10 +282,12 @@ struct WatchMenuItemRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: mapIcon(item.icon))
-                .font(.caption)
-                .foregroundStyle(Color(hex: item.color) ?? .accentColor)
-                .frame(width: 20)
+            IconView(
+                icon: item.icon,
+                size: 14,
+                color: Color(hex: item.color) ?? .accentColor
+            )
+            .frame(width: 20)
 
             Text(item.label)
                 .font(.caption)

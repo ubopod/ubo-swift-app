@@ -15,10 +15,8 @@ struct MenuItemRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                // Icon
-                Image(systemName: mapIcon(item.icon))
-                    .font(.title3)
-                    .foregroundStyle(iconColor)
+                // Icon — Nerd Font glyph if private-use codepoint, SF Symbol otherwise.
+                IconView(icon: item.icon, size: 20, color: iconColor)
                     .frame(width: 32, height: 32)
                     .background {
                         if let bgColor = item.backgroundColor.flatMap({ Color(hex: $0) }) {
