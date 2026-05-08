@@ -211,24 +211,26 @@ struct HomeMenuCard: View {
         return item.key.prefix(1).uppercased() + item.key.dropFirst()
     }
 
-    // Use icon if available, otherwise try to map from key
+    // Pick the original glyph if any, otherwise the menu key as a
+    // semantic fallback. IconView handles the Nerd-Font-vs-SF-Symbol
+    // dispatch internally.
     private var displayIcon: String {
-        let iconSource = item.icon.isEmpty ? item.key : item.icon
-        return mapIcon(iconSource)
+        item.icon.isEmpty ? item.key : item.icon
     }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
-                // Icon
-                Image(systemName: displayIcon)
-                    .font(.title2)
-                    .foregroundStyle(Color(hex: item.color) ?? .accentColor)
-                    .frame(width: 44, height: 44)
-                    .background {
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill((Color(hex: item.color) ?? .accentColor).opacity(0.15))
-                    }
+                IconView(
+                    icon: displayIcon,
+                    size: 24,
+                    color: Color(hex: item.color) ?? .accentColor
+                )
+                .frame(width: 44, height: 44)
+                .background {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill((Color(hex: item.color) ?? .accentColor).opacity(0.15))
+                }
 
                 // Label
                 Text(displayLabel)

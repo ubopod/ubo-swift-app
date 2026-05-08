@@ -36,8 +36,11 @@ struct StatusBarOverlay: View {
             if let bar = bar, !bar.icons.isEmpty {
                 Divider().frame(height: 12)
                 ForEach(Array(bar.icons.enumerated()), id: \.offset) { (_, icon) in
-                    Image(systemName: SymbolMapper.systemName(for: icon.symbol))
-                        .foregroundStyle(Color(hex: icon.color) ?? .secondary)
+                    IconView(
+                        icon: icon.symbol,
+                        size: 12,
+                        color: Color(hex: icon.color) ?? .secondary
+                    )
                 }
             }
 
