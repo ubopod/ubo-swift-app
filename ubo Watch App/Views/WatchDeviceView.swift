@@ -232,12 +232,23 @@ struct WatchMenuView: View {
 
     var body: some View {
         List {
-            // Heading if present
-            if let heading = data.heading, !heading.isEmpty {
-                Text(heading)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .listRowBackground(Color.clear)
+            // Heading + sub-heading (HeadedMenu). Web UI renders both above
+            // its tile grid; we keep the same stack on the watch, sized
+            // for the smaller screen.
+            if (data.heading?.isEmpty == false) || (data.subHeading?.isEmpty == false) {
+                VStack(alignment: .leading, spacing: 1) {
+                    if let heading = data.heading, !heading.isEmpty {
+                        markupText(heading)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let subHeading = data.subHeading, !subHeading.isEmpty {
+                        markupText(subHeading)
+                            .font(.system(size: 9))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .listRowBackground(Color.clear)
             }
 
             // Menu items — render the full list. page_index /
@@ -329,9 +340,25 @@ struct WatchNotificationView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 
-                // Action buttons
-                if !data.items.isEmpty {
-                    ForEach(data.items.compactMap { $0 }, id: \.key) { item in
+                // Split items the way the Web UI does — dismiss / extra_info
+                // shouldn't show up as full-width buttons.
+                let partitioned = partitionNotificationItems(data.items)
+
+                if let extra = partitioned.extraInfo {
+                    Button {
+                        Task {
+                            try? await viewModel.client.selectMenuItem(label: extra.label)
+                        }
+                    } label: {
+                        Label("Read Aloud", systemImage: "speaker.wave.2.circle.fill")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.accentColor)
+                }
+
+                if !partitioned.mainActions.isEmpty {
+                    ForEach(partitioned.mainActions, id: \.key) { item in
                         Button {
                             Task {
                                 try? await viewModel.client.selectMenuItem(label: item.label)
@@ -344,13 +371,16 @@ struct WatchNotificationView: View {
                     }
                 }
 
-                // Dismiss button
-                Button("Dismiss") {
-                    Task { try? await viewModel.client.goBack() }
+                // Dismiss footer — only shown when the device offered one or
+                // when there's nothing else to interact with.
+                if partitioned.hasDismiss || partitioned.mainActions.isEmpty {
+                    Button("Dismiss") {
+                        Task { try? await viewModel.client.goBack() }
+                    }
+                    .font(.caption2)
+                    .buttonStyle(.bordered)
+                    .tint(.secondary)
                 }
-                .font(.caption2)
-                .buttonStyle(.bordered)
-                .tint(.secondary)
             }
             .padding(.horizontal)
         }

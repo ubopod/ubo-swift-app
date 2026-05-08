@@ -90,19 +90,38 @@ struct MenuBrowserView: View {
                 }
                 .padding()
 
-                // Extra information
+                // Items partitioned the way the Web UI does — dismiss /
+                // extra_info are special, the rest are action buttons.
+                let partitioned = partitionNotificationItems(notification.items)
+
+                // Extra information (paired with the optional "read aloud"
+                // accent button when the device sent an `extra_info` item).
                 if !notification.extraInformation.isEmpty {
                     GroupBox {
-                        markupText(notification.extraInformation)
-                            .font(.caption)
+                        HStack(alignment: .top, spacing: 8) {
+                            markupText(notification.extraInformation)
+                                .font(.caption)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if let action = partitioned.extraInfo {
+                                Button {
+                                    Task {
+                                        try? await viewModel.client.selectMenuItem(label: action.label)
+                                    }
+                                } label: {
+                                    Image(systemName: "speaker.wave.2.circle.fill")
+                                        .font(.title3)
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                        }
                     }
                     .padding(.horizontal)
                 }
 
-                // Action items
-                if !notification.items.isEmpty {
+                // Action buttons (dismiss / extra_info already filtered out).
+                if !partitioned.mainActions.isEmpty {
                     VStack(spacing: 8) {
-                        ForEach(notification.items.compactMap { $0 }, id: \.key) { item in
+                        ForEach(partitioned.mainActions, id: \.key) { item in
                             Button {
                                 Task {
                                     try? await viewModel.client.selectMenuItem(label: item.label)
@@ -127,14 +146,18 @@ struct MenuBrowserView: View {
                     .padding(.horizontal)
                 }
 
-                // Dismiss button
-                Button("Dismiss") {
-                    Task {
-                        try? await viewModel.client.goBack()
+                // Dismiss footer — always offered when a corresponding
+                // `dismiss` item was sent, or when there are no main actions
+                // (so the user always has a way out).
+                if partitioned.hasDismiss || partitioned.mainActions.isEmpty {
+                    Button("Dismiss") {
+                        Task {
+                            try? await viewModel.client.goBack()
+                        }
                     }
+                    .buttonStyle(.bordered)
+                    .padding()
                 }
-                .buttonStyle(.bordered)
-                .padding()
             }
         }
     }
