@@ -42,6 +42,15 @@ struct WatchStatusBarOverlay: View {
                 }
             }
 
+            if let bar, !bar.progressNotifications.isEmpty {
+                ForEach(bar.progressNotifications, id: \.id) { pn in
+                    WatchProgressBarChip(
+                        progress: pn.progress,
+                        color: Color(hex: pn.color) ?? .accentColor
+                    )
+                }
+            }
+
             Spacer()
 
             if let bar, !bar.clock.isEmpty {
@@ -53,5 +62,25 @@ struct WatchStatusBarOverlay: View {
         .foregroundStyle(.secondary)
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
+    }
+}
+
+/// Compact linear progress chip mirroring the Web UI's `<LinearProgress>`
+/// — narrower than the iPhone counterpart so it fits the watch bezel.
+private struct WatchProgressBarChip: View {
+    let progress: Float?
+    let color: Color
+
+    var body: some View {
+        Group {
+            if let progress {
+                ProgressView(value: max(0, min(1, Double(progress))))
+            } else {
+                ProgressView()
+            }
+        }
+        .progressViewStyle(.linear)
+        .tint(color)
+        .frame(width: 24)
     }
 }

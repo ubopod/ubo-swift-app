@@ -44,6 +44,16 @@ struct StatusBarOverlay: View {
                 }
             }
 
+            if let bar, !bar.progressNotifications.isEmpty {
+                Divider().frame(height: 12)
+                ForEach(bar.progressNotifications, id: \.id) { pn in
+                    ProgressBarChip(
+                        progress: pn.progress,
+                        color: Color(hex: pn.color) ?? .accentColor
+                    )
+                }
+            }
+
             Spacer()
 
             if let bar, !bar.clock.isEmpty {
@@ -56,5 +66,26 @@ struct StatusBarOverlay: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(.thinMaterial)
+    }
+}
+
+/// Tiny linear progress chip mirroring the Web UI's `<LinearProgress>`
+/// (40 × 4 px). When `progress` is `nil` the bar is indeterminate; when
+/// it's a value in `0...1` it's determinate.
+private struct ProgressBarChip: View {
+    let progress: Float?
+    let color: Color
+
+    var body: some View {
+        Group {
+            if let progress {
+                ProgressView(value: max(0, min(1, Double(progress))))
+            } else {
+                ProgressView()
+            }
+        }
+        .progressViewStyle(.linear)
+        .tint(color)
+        .frame(width: 40)
     }
 }
