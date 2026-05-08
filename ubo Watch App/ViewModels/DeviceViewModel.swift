@@ -6,6 +6,7 @@ import UboSwift
 @Observable
 class DeviceViewModel {
     let client = UboClient()
+    let audioPlayback = AudioPlaybackService()
 
     // Observable state - updated from client
     private(set) var isConnecting: Bool = false
@@ -133,6 +134,8 @@ class DeviceViewModel {
         client.startViewSubscription()
         client.startStatsSubscription()
         client.startInputsSubscription()
+        audioPlayback.configure(client: client)
+        audioPlayback.start()
     }
 
     func connectWithSavedSettings() async throws {
@@ -141,6 +144,7 @@ class DeviceViewModel {
     }
 
     func disconnect() async {
+        audioPlayback.stop()
         await client.disconnect()
     }
 }

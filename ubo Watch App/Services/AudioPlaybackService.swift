@@ -1,15 +1,12 @@
 //
 //  AudioPlaybackService.swift
-//  ubo-swift-app
+//  ubo Watch App
 //
-//  Routes the device's playback event stream — one-shot samples
-//  (chimes, alerts), indexed sequence chunks (TTS / file playback),
-//  and stop signals — through `AVAudioEngine` so the user hears the
-//  same audio on the iPhone speaker as the Pi would play locally.
-//  Mirrors the contract the Web UI implements in `audio.ts`.
+//  watchOS counterpart of the iOS playback service. Same contract: subscribe
+//  to the device's `PlaybackEvent` stream and route one-shot samples /
+//  ordered sequence chunks / stop signals through `AVAudioEngine`.
 //
 
-#if os(iOS)
 import Foundation
 import AVFAudio
 import AVFoundation
@@ -23,9 +20,6 @@ final class AudioPlaybackService {
     private var lastFormat: AVAudioFormat?
     private var sessionConfigured = false
 
-    /// Per-sequence reorder buffers. The gRPC stream usually delivers
-    /// chunks in arrival order, but we still gate on `index` to match
-    /// the Web UI and tolerate any future reordering.
     private var sequences: [String: SequenceState] = [:]
 
     private var client: UboClient?
@@ -84,9 +78,6 @@ final class AudioPlaybackService {
         var pending: [Int: (AudioSampleData, Float)] = [:]
     }
 
-    /// Buffer chunks until the next-expected `index` arrives, then drain
-    /// them in order. `sample == nil` is used by the Python core as a
-    /// terminator — we just advance the counter.
     private func queueSequenceChunk(
         id: String,
         index: Int,
@@ -126,7 +117,6 @@ final class AudioPlaybackService {
         ) else { return }
 
         if format != lastFormat {
-            // Drain queued buffers from the previous format and reconnect.
             player.stop()
             engine.disconnectNodeOutput(player)
             engine.connect(player, to: engine.mainMixerNode, format: format)
@@ -167,7 +157,6 @@ final class AudioPlaybackService {
     private func stopPlayback() {
         player.stop()
         sequences.removeAll()
-        // Re-arm so the next chunk plays immediately.
         if engine.isRunning {
             player.play()
         }
@@ -184,9 +173,7 @@ final class AudioPlaybackService {
             try AVAudioSession.sharedInstance().setActive(true)
             sessionConfigured = true
         } catch {
-            // Audio session may stay un-activated on backgrounded launch;
-            // the next start() call will retry.
+            // The next start() call will retry.
         }
     }
 }
-#endif
