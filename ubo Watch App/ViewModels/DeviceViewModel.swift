@@ -118,13 +118,6 @@ class DeviceViewModel {
         return []
     }
 
-    var menuPageInfo: (current: Int, total: Int)? {
-        if case .menu(let data) = currentView {
-            return (data.pageIndex, data.totalPages)
-        }
-        return nil
-    }
-
     // Notification view data helpers
     var notification: NotificationViewData? {
         if case .notification(let data) = currentView {

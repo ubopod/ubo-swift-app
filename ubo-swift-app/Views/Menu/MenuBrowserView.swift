@@ -61,34 +61,6 @@ struct MenuBrowserView: View {
                     }
                 }
             }
-
-            if let pageInfo = viewModel.menuPageInfo, pageInfo.total > 1 {
-                Section {
-                    HStack {
-                        Button {
-                            Task { try? await viewModel.client.scrollUp() }
-                        } label: {
-                            Image(systemName: "chevron.up")
-                        }
-                        .disabled(pageInfo.current == 0)
-
-                        Spacer()
-
-                        Text("Page \(pageInfo.current + 1) of \(pageInfo.total)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        Spacer()
-
-                        Button {
-                            Task { try? await viewModel.client.scrollDown() }
-                        } label: {
-                            Image(systemName: "chevron.down")
-                        }
-                        .disabled(pageInfo.current >= pageInfo.total - 1)
-                    }
-                }
-            }
         }
         #if os(iOS)
         .listStyle(.insetGrouped)
