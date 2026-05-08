@@ -17,48 +17,63 @@ struct StatusBarOverlay: View {
     let temperature: Float?
 
     var body: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 4) {
-                Image(systemName: "cpu")
-                Text("\(Int(cpuPercent))%")
-            }
-            HStack(spacing: 4) {
-                Image(systemName: "memorychip")
-                Text("\(Int(ramPercent))%")
-            }
-            if let temp = temperature {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 12) {
                 HStack(spacing: 4) {
-                    Image(systemName: "thermometer.medium")
-                    Text("\(Int(temp))°C")
+                    Image(systemName: "cpu")
+                    Text("\(Int(cpuPercent))%")
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                HStack(spacing: 4) {
+                    Image(systemName: "memorychip")
+                    Text("\(Int(ramPercent))%")
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                if let temp = temperature {
+                    HStack(spacing: 4) {
+                        Image(systemName: "thermometer.medium")
+                        Text("\(Int(temp))°C")
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
+                }
+
+                if let bar = bar, !bar.icons.isEmpty {
+                    Divider().frame(height: 12)
+                    ForEach(Array(bar.icons.enumerated()), id: \.offset) { (_, icon) in
+                        IconView(
+                            icon: icon.symbol,
+                            size: 12,
+                            color: Color(hex: icon.color) ?? .secondary
+                        )
+                    }
+                }
+
+                Spacer()
+
+                if let bar, !bar.clock.isEmpty {
+                    Text(bar.clock)
+                        .font(.caption.monospacedDigit())
+                        .lineLimit(1)
+                        .fixedSize()
                 }
             }
 
-            if let bar = bar, !bar.icons.isEmpty {
-                Divider().frame(height: 12)
-                ForEach(Array(bar.icons.enumerated()), id: \.offset) { (_, icon) in
-                    IconView(
-                        icon: icon.symbol,
-                        size: 12,
-                        color: Color(hex: icon.color) ?? .secondary
-                    )
-                }
-            }
-
+            // Background-task progress lives on its own row so it can't
+            // squeeze the metric chips into wrapping. Hidden when the
+            // device has nothing in flight.
             if let bar, !bar.progressNotifications.isEmpty {
-                Divider().frame(height: 12)
-                ForEach(bar.progressNotifications, id: \.id) { pn in
-                    ProgressBarChip(
-                        progress: pn.progress,
-                        color: Color(hex: pn.color) ?? .accentColor
-                    )
+                HStack(spacing: 8) {
+                    ForEach(bar.progressNotifications, id: \.id) { pn in
+                        ProgressBarChip(
+                            progress: pn.progress,
+                            color: Color(hex: pn.color) ?? .accentColor
+                        )
+                    }
+                    Spacer(minLength: 0)
                 }
-            }
-
-            Spacer()
-
-            if let bar, !bar.clock.isEmpty {
-                Text(bar.clock)
-                    .font(.caption.monospacedDigit())
             }
         }
         .font(.caption)
@@ -69,9 +84,8 @@ struct StatusBarOverlay: View {
     }
 }
 
-/// Tiny linear progress chip mirroring the Web UI's `<LinearProgress>`
-/// (40 × 4 px). When `progress` is `nil` the bar is indeterminate; when
-/// it's a value in `0...1` it's determinate.
+/// Tiny linear progress chip mirroring the Web UI's `<LinearProgress>`.
+/// `nil` → animated indeterminate; `0...1` → determinate fill.
 private struct ProgressBarChip: View {
     let progress: Float?
     let color: Color
@@ -86,6 +100,6 @@ private struct ProgressBarChip: View {
         }
         .progressViewStyle(.linear)
         .tint(color)
-        .frame(width: 40)
+        .frame(width: 60)
     }
 }
