@@ -12,6 +12,15 @@ import UboSwift
 struct UboWatchApp: App {
     @State private var viewModel = DeviceViewModel()
 
+    init() {
+        #if DEBUG
+        UboLog.level = .debug
+        #else
+        UboLog.level = .info
+        #endif
+        UboIconFontBootstrap.ensureRegistered()
+    }
+
     var body: some Scene {
         WindowGroup {
             WatchContentView()
