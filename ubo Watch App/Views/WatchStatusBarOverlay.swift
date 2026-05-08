@@ -16,46 +16,61 @@ struct WatchStatusBarOverlay: View {
     let temperature: Float?
 
     var body: some View {
-        HStack(spacing: 6) {
-            HStack(spacing: 2) {
-                Image(systemName: "cpu")
-                Text("\(Int(cpuPercent))%")
-            }
-            HStack(spacing: 2) {
-                Image(systemName: "memorychip")
-                Text("\(Int(ramPercent))%")
-            }
-            if let temp = temperature {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
                 HStack(spacing: 2) {
-                    Image(systemName: "thermometer.medium")
-                    Text("\(Int(temp))°")
+                    Image(systemName: "cpu")
+                    Text("\(Int(cpuPercent))%")
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                HStack(spacing: 2) {
+                    Image(systemName: "memorychip")
+                    Text("\(Int(ramPercent))%")
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                if let temp = temperature {
+                    HStack(spacing: 2) {
+                        Image(systemName: "thermometer.medium")
+                        Text("\(Int(temp))°")
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
+                }
+
+                if let bar = bar, !bar.icons.isEmpty {
+                    ForEach(Array(bar.icons.enumerated()), id: \.offset) { (_, icon) in
+                        IconView(
+                            icon: icon.symbol,
+                            size: 9,
+                            color: Color(hex: icon.color) ?? .secondary
+                        )
+                    }
+                }
+
+                Spacer()
+
+                if let bar, !bar.clock.isEmpty {
+                    Text(bar.clock)
+                        .font(.system(size: 9, design: .monospaced))
+                        .lineLimit(1)
+                        .fixedSize()
                 }
             }
 
-            if let bar = bar, !bar.icons.isEmpty {
-                ForEach(Array(bar.icons.enumerated()), id: \.offset) { (_, icon) in
-                    IconView(
-                        icon: icon.symbol,
-                        size: 9,
-                        color: Color(hex: icon.color) ?? .secondary
-                    )
-                }
-            }
-
+            // Background-task progress on its own row keeps the metric
+            // chips on the watch from getting squeezed off-screen.
             if let bar, !bar.progressNotifications.isEmpty {
-                ForEach(bar.progressNotifications, id: \.id) { pn in
-                    WatchProgressBarChip(
-                        progress: pn.progress,
-                        color: Color(hex: pn.color) ?? .accentColor
-                    )
+                HStack(spacing: 4) {
+                    ForEach(bar.progressNotifications, id: \.id) { pn in
+                        WatchProgressBarChip(
+                            progress: pn.progress,
+                            color: Color(hex: pn.color) ?? .accentColor
+                        )
+                    }
+                    Spacer(minLength: 0)
                 }
-            }
-
-            Spacer()
-
-            if let bar, !bar.clock.isEmpty {
-                Text(bar.clock)
-                    .font(.system(size: 9, design: .monospaced))
             }
         }
         .font(.system(size: 9))
@@ -65,8 +80,8 @@ struct WatchStatusBarOverlay: View {
     }
 }
 
-/// Compact linear progress chip mirroring the Web UI's `<LinearProgress>`
-/// — narrower than the iPhone counterpart so it fits the watch bezel.
+/// Compact linear progress chip mirroring the Web UI's `<LinearProgress>`.
+/// `nil` → animated indeterminate; `0...1` → determinate fill.
 private struct WatchProgressBarChip: View {
     let progress: Float?
     let color: Color
@@ -81,6 +96,6 @@ private struct WatchProgressBarChip: View {
         }
         .progressViewStyle(.linear)
         .tint(color)
-        .frame(width: 24)
+        .frame(width: 36)
     }
 }
