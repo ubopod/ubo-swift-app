@@ -16,6 +16,11 @@ import UniformTypeIdentifiers
 
 struct InputFormView: View {
     let description: WebUIInputDescription
+    /// Called by Cancel/Submit so the parent can immediately stop
+    /// presenting this sheet, even before the server's state update
+    /// for the resolved demand has propagated back over gRPC.
+    let onClose: () -> Void
+
     @Environment(DeviceViewModel.self) private var viewModel
     @Environment(\.dismiss) private var dismiss
 
@@ -59,9 +64,10 @@ struct InputFormView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", role: .cancel) {
+                        UboLog.input.info("user cancelled input \(description.id)")
+                        onClose()
                         Task {
                             try? await viewModel.client.cancelInput(id: description.id)
-                            dismiss()
                         }
                     }
                 }
@@ -122,8 +128,9 @@ struct InputFormView: View {
         // pass the first field's value as the scalar — multi-field forms
         // rely on the Web UI's encoding, which we don't replicate yet.
         let scalar = description.fields.first.flatMap { values[$0.name] } ?? ""
+        UboLog.input.info("submitting input \(description.id) with scalar=\"\(scalar)\"")
+        onClose()
         try? await viewModel.client.provideInput(id: description.id, value: scalar)
-        dismiss()
     }
 }
 

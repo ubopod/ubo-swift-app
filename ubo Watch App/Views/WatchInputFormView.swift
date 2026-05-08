@@ -12,6 +12,11 @@ import UboSwift
 
 struct WatchInputFormView: View {
     let description: WebUIInputDescription
+    /// Called by Cancel/Submit so the parent can immediately stop
+    /// presenting this sheet without waiting for the server's state
+    /// update to propagate back.
+    let onClose: () -> Void
+
     @Environment(DeviceViewModel.self) private var viewModel
     @Environment(\.dismiss) private var dismiss
 
@@ -36,9 +41,10 @@ struct WatchInputFormView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     Button("Cancel", role: .cancel) {
+                        UboLog.input.info("user cancelled input \(description.id)")
+                        onClose()
                         Task {
                             try? await viewModel.client.cancelInput(id: description.id)
-                            dismiss()
                         }
                     }
                 }
@@ -85,7 +91,8 @@ struct WatchInputFormView: View {
 
     private func submit() async {
         let scalar = description.fields.first.flatMap { values[$0.name] } ?? ""
+        UboLog.input.info("submitting input \(description.id) with scalar=\"\(scalar)\"")
+        onClose()
         try? await viewModel.client.provideInput(id: description.id, value: scalar)
-        dismiss()
     }
 }
