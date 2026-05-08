@@ -49,7 +49,7 @@ struct WatchDeviceView: View {
                     if let glyph = titleSplit.icon {
                         IconView(icon: glyph, size: 11)
                     }
-                    Text(titleSplit.label)
+                    markupText(titleSplit.label)
                         .font(.caption)
                         .fontWeight(.semibold)
                         .lineLimit(1)
@@ -269,7 +269,7 @@ struct WatchMenuItemRow: View {
             )
             .frame(width: 20)
 
-            Text(item.label)
+            markupText(item.label)
                 .font(.caption)
                 .lineLimit(2)
 
@@ -318,13 +318,13 @@ struct WatchNotificationView: View {
                     .foregroundStyle(Color(hex: data.color) ?? .accentColor)
 
                 // Title
-                Text(data.title)
+                markupText(data.title)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .multilineTextAlignment(.center)
 
                 // Content
-                Text(data.content)
+                markupText(data.content)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -337,7 +337,7 @@ struct WatchNotificationView: View {
                                 try? await viewModel.client.selectMenuItem(label: item.label)
                             }
                         } label: {
-                            Text(item.label)
+                            markupText(item.label)
                                 .font(.caption2)
                         }
                         .buttonStyle(.bordered)

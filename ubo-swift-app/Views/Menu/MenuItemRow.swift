@@ -26,7 +26,7 @@ struct MenuItemRow: View {
                     }
 
                 // Label
-                Text(item.label)
+                markupText(item.label)
                     .font(.body)
                     .foregroundStyle(.primary)
 

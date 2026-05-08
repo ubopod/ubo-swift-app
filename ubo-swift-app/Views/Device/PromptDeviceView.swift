@@ -23,13 +23,13 @@ struct PromptDeviceView: View {
                 .foregroundStyle(Color.accentColor)
 
             if !data.title.isEmpty {
-                Text(data.title)
+                markupText(data.title)
                     .font(.title2.bold())
                     .multilineTextAlignment(.center)
             }
 
             if !data.prompt.isEmpty {
-                Text(data.prompt)
+                markupText(data.prompt)
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -52,7 +52,7 @@ struct PromptDeviceView: View {
                                 try? await viewModel.client.selectMenuItem(label: item.label)
                             }
                         } label: {
-                            Text(item.label.isEmpty ? item.key : item.label)
+                            markupText(item.label.isEmpty ? item.key : item.label)
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
