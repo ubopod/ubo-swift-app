@@ -17,6 +17,11 @@ struct DeviceSettingsView: View {
     @State private var showPowerAlert = false
     @State private var powerAction: PowerAction? = nil
 
+    /// Local slider position. While the user is dragging we don't let
+    /// incoming `state.audio.playback_volume` updates clobber it.
+    @State private var volumeSlider: Double = 0
+    @State private var isEditingVolume: Bool = false
+
     enum PowerAction {
         case reboot, powerOff
     }
@@ -32,6 +37,9 @@ struct DeviceSettingsView: View {
 
                 // Display Settings
                 displaySection
+
+                // Audio (volume + mute + chime)
+                audioSection
 
                 // Power Controls
                 powerSection
@@ -136,6 +144,69 @@ struct DeviceSettingsView: View {
         } header: {
             Text("Display")
         }
+    }
+
+    private var audioSection: some View {
+        Section {
+            // Volume slider — bound to a local @State so dragging is smooth,
+            // synced from the device whenever we're not actively editing.
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Image(systemName: volumeIcon)
+                        .foregroundStyle(.secondary)
+                    Text("Volume")
+                    Spacer()
+                    Text("\(Int(volumeSlider * 100))%")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                Slider(value: $volumeSlider, in: 0...1) { editing in
+                    isEditingVolume = editing
+                    if !editing {
+                        let target = Float(volumeSlider)
+                        Task { try? await viewModel.client.setVolume(target) }
+                    }
+                }
+            }
+            .onAppear {
+                if let v = viewModel.cachedPlaybackVolume {
+                    volumeSlider = Double(v)
+                }
+            }
+            .onChange(of: viewModel.cachedPlaybackVolume) { _, newValue in
+                guard !isEditingVolume, let v = newValue else { return }
+                volumeSlider = Double(v)
+            }
+
+            Toggle(
+                "Mute",
+                isOn: Binding(
+                    get: { viewModel.cachedIsPlaybackMute ?? false },
+                    set: { newValue in
+                        Task { try? await viewModel.client.setMute(newValue) }
+                    }
+                )
+            )
+
+            Button {
+                Task { try? await viewModel.client.playChime(.done) }
+            } label: {
+                Label("Play Test Chime", systemImage: "bell.fill")
+            }
+        } header: {
+            Text("Audio")
+        } footer: {
+            Text("Volume changes propagate to and from the device — hardware buttons, the Watch, and other connected clients stay in sync.")
+        }
+    }
+
+    private var volumeIcon: String {
+        if (viewModel.cachedIsPlaybackMute ?? false) || volumeSlider == 0 {
+            return "speaker.slash.fill"
+        }
+        if volumeSlider < 0.34 { return "speaker.fill" }
+        if volumeSlider < 0.67 { return "speaker.wave.1.fill" }
+        return "speaker.wave.2.fill"
     }
 
     private var powerSection: some View {
