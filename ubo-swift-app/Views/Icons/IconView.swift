@@ -22,6 +22,43 @@ public enum UboIconFont {
     public static let family = "Arimo Nerd Font"
 }
 
+/// Resolve a `MenuItemData.color`-style hex string to a SwiftUI
+/// `Color`, treating the GUI client's default white as "use the
+/// system primary color so it stays visible in both light and dark
+/// modes". Empty / unparseable strings also fall through to
+/// `.primary`.
+public func uboIconColor(forHex hex: String, fallback: Color = .primary) -> Color {
+    let normalised = hex.lowercased()
+    if normalised.isEmpty || normalised == "#ffffff" || normalised == "#fff" {
+        return fallback
+    }
+    return Color(hex: hex) ?? fallback
+}
+
+/// True when `s` starts with a Unicode Private-Use codepoint, i.e.
+/// when it should be rendered by the bundled Nerd Font instead of
+/// looked up as an SF Symbol.
+public func isUboNerdGlyph(_ s: String) -> Bool {
+    guard let first = s.unicodeScalars.first else { return false }
+    let v = first.value
+    return (0xE000...0xF8FF).contains(v)
+        || (0xF0000...0xFFFFD).contains(v)
+        || (0x100000...0x10FFFD).contains(v)
+}
+
+/// Split a label that may begin with a Nerd Font glyph (as the GUI
+/// client does for titles like `\u{F035C}Main`) into the leading
+/// icon and the remaining label. Returns `(nil, original)` when
+/// there's no leading glyph.
+public func splitLeadingGlyph(_ s: String) -> (icon: String?, label: String) {
+    guard let first = s.unicodeScalars.first, isUboNerdGlyph(String(first)) else {
+        return (nil, s)
+    }
+    let glyph = String(first)
+    let remainder = String(s.unicodeScalars.dropFirst())
+    return (glyph, remainder)
+}
+
 public struct IconView: View {
     public let icon: String
     public let size: CGFloat
@@ -34,7 +71,7 @@ public struct IconView: View {
     }
 
     public var body: some View {
-        if isPrivateUseGlyph(icon) {
+        if isUboNerdGlyph(icon) {
             Text(icon)
                 .font(.custom(UboIconFont.family, size: size))
                 .foregroundStyle(color)
@@ -45,17 +82,5 @@ public struct IconView: View {
         } else {
             EmptyView()
         }
-    }
-
-    /// Nerd Font glyphs occupy the Unicode Private Use Area. Single-
-    /// character icon strings whose first scalar is in the BMP PUA
-    /// (`U+E000..U+F8FF`) or one of the supplementary PUA planes are
-    /// rendered with the bundled font.
-    private func isPrivateUseGlyph(_ s: String) -> Bool {
-        guard let first = s.unicodeScalars.first else { return false }
-        let v = first.value
-        return (0xE000...0xF8FF).contains(v)
-            || (0xF0000...0xFFFFD).contains(v)
-            || (0x100000...0x10FFFD).contains(v)
     }
 }

@@ -43,7 +43,10 @@ struct MenuItemRow: View {
     }
 
     private var iconColor: Color {
-        Color(hex: item.color) ?? .accentColor
+        // Items default to white on the GUI client (dark display);
+        // route through `uboIconColor` so they stay visible in iOS
+        // light mode too.
+        uboIconColor(forHex: item.color, fallback: .accentColor)
     }
 
     private func mapIcon(_ icon: String) -> String {
