@@ -25,13 +25,13 @@ struct InstructionDeviceView: View {
                 .foregroundStyle(Color.accentColor)
 
             if !data.title.isEmpty {
-                Text(data.title)
+                markupText(data.title)
                     .font(.title2.bold())
                     .multilineTextAlignment(.center)
             }
 
             if !data.instruction.isEmpty {
-                Text(data.instruction)
+                markupText(data.instruction)
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -44,7 +44,7 @@ struct InstructionDeviceView: View {
             }
 
             if !data.progressText.isEmpty {
-                Text(data.progressText)
+                markupText(data.progressText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -58,7 +58,7 @@ struct InstructionDeviceView: View {
             Spacer(minLength: 0)
 
             if !data.footerText.isEmpty {
-                Text(data.footerText)
+                markupText(data.footerText)
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .padding(.bottom, 24)

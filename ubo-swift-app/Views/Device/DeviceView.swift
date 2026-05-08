@@ -62,7 +62,7 @@ struct DeviceView: View {
                         if let glyph = split.icon {
                             IconView(icon: glyph, size: 16)
                         }
-                        Text(split.label)
+                        markupText(split.label)
                             .font(.headline)
                     }
                 }
@@ -362,11 +362,11 @@ struct NotificationDeviceView: View {
 
                 // Title & Content
                 VStack(spacing: 8) {
-                    Text(data.title)
+                    markupText(data.title)
                         .font(.title2.bold())
                         .multilineTextAlignment(.center)
 
-                    Text(data.content)
+                    markupText(data.content)
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -376,7 +376,7 @@ struct NotificationDeviceView: View {
                 // Extra information
                 if !data.extraInformation.isEmpty {
                     GroupBox {
-                        Text(data.extraInformation)
+                        markupText(data.extraInformation)
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
@@ -394,7 +394,7 @@ struct NotificationDeviceView: View {
                                 }
                             } label: {
                                 HStack {
-                                    Text(item.label)
+                                    markupText(item.label)
                                         .fontWeight(.medium)
                                     Spacer()
                                     Image(systemName: "chevron.right")

@@ -80,10 +80,10 @@ struct MenuBrowserView: View {
                         .font(.system(size: 48))
                         .foregroundStyle(Color(hex: notification.color) ?? .accentColor)
 
-                    Text(notification.title)
+                    markupText(notification.title)
                         .font(.title2.bold())
 
-                    Text(notification.content)
+                    markupText(notification.content)
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -93,7 +93,7 @@ struct MenuBrowserView: View {
                 // Extra information
                 if !notification.extraInformation.isEmpty {
                     GroupBox {
-                        Text(notification.extraInformation)
+                        markupText(notification.extraInformation)
                             .font(.caption)
                     }
                     .padding(.horizontal)
@@ -110,7 +110,7 @@ struct MenuBrowserView: View {
                             } label: {
                                 HStack {
                                     Image(systemName: mapMenuIcon(item.icon))
-                                    Text(item.label)
+                                    markupText(item.label)
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                         .foregroundStyle(.secondary)

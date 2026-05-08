@@ -68,7 +68,7 @@ struct QRCodeRenderView: View {
     var body: some View {
         VStack(spacing: 16) {
             if !data.title.isEmpty {
-                Text(data.title)
+                markupText(data.title)
                     .font(.headline)
             }
 
@@ -117,7 +117,7 @@ struct QRCodeCarouselRenderView: View {
     var body: some View {
         VStack(spacing: 12) {
             if !data.title.isEmpty {
-                Text(data.title).font(.headline)
+                markupText(data.title).font(.headline)
             }
             if payloads.isEmpty {
                 Text("No QR payloads")
@@ -171,10 +171,10 @@ struct TextViewerRenderView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 if !data.title.isEmpty {
-                    Text(data.title)
+                    markupText(data.title)
                         .font(.headline)
                 }
-                Text(text)
+                markupText(text)
                     .font(.body.monospaced())
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -201,7 +201,7 @@ struct ImageViewerRenderView: View {
     var body: some View {
         VStack(spacing: 12) {
             if !data.title.isEmpty {
-                Text(data.title).font(.headline)
+                markupText(data.title).font(.headline)
             }
             if let bytes = imageData,
                let uiImage = PlatformImage(data: bytes) {
@@ -256,10 +256,10 @@ struct StatusRenderView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(Color.accentColor)
             if !data.title.isEmpty {
-                Text(data.title).font(.title3.bold())
+                markupText(data.title).font(.title3.bold())
             }
             if !statusText.isEmpty {
-                Text(statusText)
+                markupText(statusText)
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -282,7 +282,7 @@ struct FrameStreamRenderView: View {
     var body: some View {
         VStack(spacing: 12) {
             if !title.isEmpty {
-                Text(title).font(.headline)
+                markupText(title).font(.headline)
             }
             ZStack {
                 Rectangle()
@@ -352,7 +352,7 @@ struct UnknownKindView: View {
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
             if !data.title.isEmpty {
-                Text(data.title)
+                markupText(data.title)
                     .font(.body)
             }
         }

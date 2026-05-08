@@ -73,7 +73,7 @@ private struct WatchQRView: View {
         ScrollView {
             VStack(spacing: 8) {
                 if !title.isEmpty {
-                    Text(title).font(.caption).fontWeight(.semibold)
+                    markupText(title).font(.caption).fontWeight(.semibold)
                 }
                 Image(systemName: "qrcode")
                     .font(.system(size: 36))
@@ -133,9 +133,9 @@ private struct WatchTextViewer: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 6) {
                 if !title.isEmpty {
-                    Text(title).font(.caption).fontWeight(.semibold)
+                    markupText(title).font(.caption).fontWeight(.semibold)
                 }
-                Text(text)
+                markupText(text)
                     .font(.system(size: 11, design: .monospaced))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -152,7 +152,7 @@ private struct WatchImageViewer: View {
         ScrollView {
             VStack(spacing: 6) {
                 if !title.isEmpty {
-                    Text(title).font(.caption).fontWeight(.semibold)
+                    markupText(title).font(.caption).fontWeight(.semibold)
                 }
                 if let bytes = data, let image = UIImage(data: bytes) {
                     Image(uiImage: image)
@@ -181,7 +181,7 @@ private struct WatchStatusView: View {
                 Text(title).font(.caption).fontWeight(.semibold)
             }
             if !text.isEmpty {
-                Text(text)
+                markupText(text)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -249,10 +249,10 @@ struct WatchInstructionView: View {
                     .font(.title2)
                     .foregroundStyle(Color.accentColor)
                 if !data.title.isEmpty {
-                    Text(data.title).font(.caption).fontWeight(.semibold)
+                    markupText(data.title).font(.caption).fontWeight(.semibold)
                 }
                 if !data.instruction.isEmpty {
-                    Text(data.instruction)
+                    markupText(data.instruction)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -261,7 +261,7 @@ struct WatchInstructionView: View {
                     ProgressView()
                 }
                 if !data.progressText.isEmpty {
-                    Text(data.progressText)
+                    markupText(data.progressText)
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                 }
@@ -271,7 +271,7 @@ struct WatchInstructionView: View {
                         .foregroundStyle(.tertiary)
                 }
                 if !data.footerText.isEmpty {
-                    Text(data.footerText)
+                    markupText(data.footerText)
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
@@ -305,10 +305,10 @@ struct WatchPromptView: View {
                     .font(.title3)
                     .foregroundStyle(Color.accentColor)
                 if !data.title.isEmpty {
-                    Text(data.title).font(.caption).fontWeight(.semibold)
+                    markupText(data.title).font(.caption).fontWeight(.semibold)
                 }
                 if !data.prompt.isEmpty {
-                    Text(data.prompt)
+                    markupText(data.prompt)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -325,7 +325,7 @@ struct WatchPromptView: View {
                         Button {
                             Task { try? await viewModel.client.selectMenuItem(label: item.label) }
                         } label: {
-                            Text(item.label.isEmpty ? item.key : item.label)
+                            markupText(item.label.isEmpty ? item.key : item.label)
                                 .font(.caption2)
                                 .frame(maxWidth: .infinity)
                         }
