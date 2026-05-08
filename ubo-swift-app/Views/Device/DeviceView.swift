@@ -11,8 +11,21 @@ import UboSwift
 struct DeviceView: View {
     @Environment(DeviceViewModel.self) private var viewModel
 
+    private var showsStatusBar: Bool {
+        viewModel.currentView?.showStatusBar ?? false
+    }
+
     var body: some View {
         NavigationStack {
+            VStack(spacing: 0) {
+                if showsStatusBar {
+                    StatusBarOverlay(
+                        bar: viewModel.statusBar,
+                        cpuPercent: viewModel.cpuPercent,
+                        ramPercent: viewModel.ramPercent,
+                        temperature: viewModel.temperature
+                    )
+                }
             Group {
                 switch viewModel.currentView {
                 case .home(let data):
@@ -23,6 +36,12 @@ struct DeviceView: View {
                     NotificationDeviceView(data: data)
                 case .application(let data):
                     ApplicationDeviceView(data: data)
+                case .instruction(let data):
+                    InstructionDeviceView(data: data)
+                case .prompt(let data):
+                    PromptDeviceView(data: data)
+                case .render(let data):
+                    RenderDeviceView(data: data)
                 case .none:
                     loadingView
                 }
@@ -51,6 +70,25 @@ struct DeviceView: View {
                         Image(systemName: "house")
                     }
                 }
+
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        triggerHaptic()
+                        Task { await viewModel.toggleMicCapture() }
+                    } label: {
+                        Image(systemName: viewModel.micCapture.isRunning ? "mic.fill" : "mic")
+                            .foregroundStyle(viewModel.micCapture.isRunning ? Color.red : Color.primary)
+                    }
+                    .accessibilityLabel(viewModel.micCapture.isRunning ? "Stop microphone" : "Start microphone")
+                }
+            }
+            .sheet(item: Binding(
+                get: { viewModel.activeInputs.first },
+                set: { _ in /* dismissal goes through provideInput / cancelInput */ }
+            )) { description in
+                InputFormView(description: description)
+                    .environment(viewModel)
+            }
             }
         }
     }
@@ -65,6 +103,12 @@ struct DeviceView: View {
             return "Notification"
         case .application(let data):
             return data.applicationId
+        case .instruction(let data):
+            return data.title.isEmpty ? "Instruction" : data.title
+        case .prompt(let data):
+            return data.title.isEmpty ? "Prompt" : data.title
+        case .render(let data):
+            return data.title.isEmpty ? "Render" : data.title
         case .none:
             return "Device"
         }

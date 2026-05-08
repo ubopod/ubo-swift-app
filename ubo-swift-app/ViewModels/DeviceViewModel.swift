@@ -8,6 +8,8 @@ import UboSwift
 class DeviceViewModel {
     let client = UboClient()
     let cameraManager = CameraManager()
+    let micCapture = MicCaptureService()
+    let audioPlayback = AudioPlaybackService()
 
     // Observable state - updated from client
     private(set) var isConnecting: Bool = false
@@ -15,6 +17,7 @@ class DeviceViewModel {
     private(set) var currentView: ViewData?
     private(set) var statusBar: StatusBarData?
     private(set) var lastError: UboError?
+    private(set) var activeInputs: [WebUIInputDescription] = []
 
     // System stats - continuously updated from stats subscription
     private(set) var cachedCpuPercent: Float = 0
@@ -53,6 +56,13 @@ class DeviceViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in
                 self?.lastError = error
+            }
+            .store(in: &cancellables)
+
+        client.$activeInputs
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] inputs in
+                self?.activeInputs = inputs
             }
             .store(in: &cancellables)
 
@@ -160,8 +170,12 @@ class DeviceViewModel {
         client.startViewSubscription()
         client.startStatsSubscription()
         client.startCameraSubscription()
+        client.startInputsSubscription()
         cameraManager.configure(client: client)
         startCameraObservation()
+        micCapture.configure(client: client)
+        audioPlayback.configure(client: client)
+        audioPlayback.start()
     }
 
     func connectWithSavedSettings() async throws {
@@ -173,7 +187,21 @@ class DeviceViewModel {
         cameraObservationTask?.cancel()
         cameraObservationTask = nil
         cameraManager.stopCamera()
+        micCapture.stop()
+        audioPlayback.stop()
         await client.disconnect()
+    }
+
+    /// Toggle "press to talk" mic capture. Streams PCM16 frames to the
+    /// device's assistant pipeline.
+    func toggleMicCapture() async {
+        if micCapture.isRunning {
+            micCapture.stop()
+            try? await client.stopAssistantListening()
+        } else {
+            try? await client.startAssistantListening()
+            try? await micCapture.start()
+        }
     }
 
     // MARK: - Camera Observation

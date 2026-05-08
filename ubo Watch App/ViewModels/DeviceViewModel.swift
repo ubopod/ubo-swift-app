@@ -13,6 +13,7 @@ class DeviceViewModel {
     private(set) var currentView: ViewData?
     private(set) var statusBar: StatusBarData?
     private(set) var lastError: UboError?
+    private(set) var activeInputs: [WebUIInputDescription] = []
 
     // System stats - continuously updated from stats subscription
     private(set) var cachedCpuPercent: Float = 0
@@ -49,6 +50,13 @@ class DeviceViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in
                 self?.lastError = error
+            }
+            .store(in: &cancellables)
+
+        client.$activeInputs
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] inputs in
+                self?.activeInputs = inputs
             }
             .store(in: &cancellables)
 
@@ -131,6 +139,7 @@ class DeviceViewModel {
         try await client.connect(host: host, port: port, subscribeToDisplay: false)
         client.startViewSubscription()
         client.startStatsSubscription()
+        client.startInputsSubscription()
     }
 
     func connectWithSavedSettings() async throws {

@@ -15,6 +15,8 @@ struct ConnectionView: View {
     @State private var portString: String = "50051"
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
+    @State private var discovered: [DiscoveredDevice] = []
+    @State private var browseTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -90,6 +92,53 @@ struct ConnectionView: View {
                     .disabled(host.isEmpty || viewModel.isConnecting)
                     .padding(.horizontal)
 
+                    // Discovered devices (Bonjour)
+                    if !discovered.isEmpty {
+                        VStack(spacing: 12) {
+                            HStack {
+                                Image(systemName: "wifi")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.accentColor)
+                                Text("Found on network")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                            }
+
+                            ForEach(Array(discovered).sorted(by: { $0.name < $1.name }), id: \.self) { device in
+                                Button {
+                                    host = device.host
+                                    portString = String(device.port)
+                                    connect()
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "antenna.radiowaves.left.and.right")
+                                            .font(.title3)
+                                            .foregroundStyle(Color.accentColor)
+                                        VStack(alignment: .leading) {
+                                            Text(device.name)
+                                                .font(.body.weight(.medium))
+                                            Text("\(device.host):\(device.port)")
+                                                .font(.caption.monospaced())
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption)
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    .padding()
+                                    .background {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(.regularMaterial)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+
                     // Recent Connection
                     if !viewModel.savedHost.isEmpty && viewModel.savedHost != host {
                         VStack(spacing: 12) {
@@ -146,7 +195,9 @@ struct ConnectionView: View {
                     host = viewModel.savedHost
                     portString = String(viewModel.savedPort)
                 }
+                startDiscovery()
             }
+            .onDisappear { stopDiscovery() }
             .alert("Connection Error", isPresented: $showError) {
                 Button("OK", role: .cancel) { }
             } message: {
@@ -170,6 +221,20 @@ struct ConnectionView: View {
                 showError = true
             }
         }
+    }
+
+    private func startDiscovery() {
+        browseTask?.cancel()
+        browseTask = Task { @MainActor in
+            for await snapshot in UboDiscovery.browse() {
+                discovered = Array(snapshot)
+            }
+        }
+    }
+
+    private func stopDiscovery() {
+        browseTask?.cancel()
+        browseTask = nil
     }
 }
 
