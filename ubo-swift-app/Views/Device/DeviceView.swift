@@ -11,6 +11,11 @@ import UboSwift
 struct DeviceView: View {
     @Environment(DeviceViewModel.self) private var viewModel
 
+    /// IDs of input demands the user already resolved (Cancel/Submit) on
+    /// this client. Filters them out of the sheet binding so the form
+    /// doesn't re-present while the server's state update is in flight.
+    @State private var dismissedInputIds: Set<String> = []
+
     private var showsStatusBar: Bool {
         viewModel.currentView?.showStatusBar ?? false
     }
@@ -82,12 +87,21 @@ struct DeviceView: View {
                     .accessibilityLabel(viewModel.micCapture.isRunning ? "Stop microphone" : "Start microphone")
                 }
             }
-            .sheet(item: Binding(
-                get: { viewModel.activeInputs.first },
-                set: { _ in /* dismissal goes through provideInput / cancelInput */ }
+            .sheet(item: Binding<WebUIInputDescription?>(
+                get: {
+                    viewModel.activeInputs.first { !dismissedInputIds.contains($0.id) }
+                },
+                set: { _ in /* dismissal driven by onClose + server state */ }
             )) { description in
-                InputFormView(description: description)
-                    .environment(viewModel)
+                InputFormView(description: description) {
+                    dismissedInputIds.insert(description.id)
+                }
+                .environment(viewModel)
+            }
+            .onChange(of: viewModel.activeInputs.map(\.id)) { _, ids in
+                // Drop dismissals for inputs the server has already resolved
+                // so future demands with new ids are presented again.
+                dismissedInputIds.formIntersection(ids)
             }
             }
         }
