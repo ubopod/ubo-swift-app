@@ -306,12 +306,23 @@ struct MenuDeviceView: View {
 
     var body: some View {
         List {
-            // Heading if present
-            if let heading = data.heading, !heading.isEmpty {
+            // Heading + sub-heading (HeadedMenu) — Web UI renders both in
+            // its tile grid; the GUI client paints them as a stacked
+            // header. We mirror the same hierarchy here.
+            if (data.heading?.isEmpty == false) || (data.subHeading?.isEmpty == false) {
                 Section {
-                    Text(heading)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        if let heading = data.heading, !heading.isEmpty {
+                            markupText(heading)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let subHeading = data.subHeading, !subHeading.isEmpty {
+                            markupText(subHeading)
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 }
             }
 
@@ -373,20 +384,39 @@ struct NotificationDeviceView: View {
                 }
                 .padding(.horizontal)
 
-                // Extra information
+                // Web UI parity: split items into main / extra_info / dismiss.
+                let partitioned = partitionNotificationItems(data.items)
+
+                // Extra information (paired with the optional `extra_info`
+                // accent button if one was sent).
                 if !data.extraInformation.isEmpty {
                     GroupBox {
-                        markupText(data.extraInformation)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
+                        HStack(alignment: .top, spacing: 8) {
+                            markupText(data.extraInformation)
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if let action = partitioned.extraInfo {
+                                Button {
+                                    triggerHaptic()
+                                    Task {
+                                        try? await viewModel.client.selectMenuItem(label: action.label)
+                                    }
+                                } label: {
+                                    Image(systemName: "speaker.wave.2.circle.fill")
+                                        .font(.title2)
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                        }
                     }
                     .padding(.horizontal)
                 }
 
-                // Action buttons
-                if !data.items.isEmpty {
+                // Action buttons (dismiss / extra_info already filtered out).
+                if !partitioned.mainActions.isEmpty {
                     VStack(spacing: 10) {
-                        ForEach(data.items.compactMap { $0 }, id: \.key) { item in
+                        ForEach(partitioned.mainActions, id: \.key) { item in
                             Button {
                                 triggerHaptic()
                                 Task {
@@ -413,13 +443,16 @@ struct NotificationDeviceView: View {
                     .padding(.horizontal)
                 }
 
-                // Dismiss
-                Button("Dismiss") {
-                    triggerHaptic()
-                    Task { try? await viewModel.client.goBack() }
+                // Dismiss footer (only offered when the device sent a
+                // dismiss item or there's nothing else actionable).
+                if partitioned.hasDismiss || partitioned.mainActions.isEmpty {
+                    Button("Dismiss") {
+                        triggerHaptic()
+                        Task { try? await viewModel.client.goBack() }
+                    }
+                    .buttonStyle(.bordered)
+                    .padding(.top)
                 }
-                .buttonStyle(.bordered)
-                .padding(.top)
             }
             .padding(.bottom, 32)
         }
