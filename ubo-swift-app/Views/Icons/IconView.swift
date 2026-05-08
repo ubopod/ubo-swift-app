@@ -14,10 +14,12 @@
 import SwiftUI
 
 /// Name the bundled Nerd Font is registered as via
-/// `INFOPLIST_KEY_UIAppFonts`. Defined once here so future swaps
-/// (different Nerd Font variant, etc.) only need to update one place.
+/// `INFOPLIST_KEY_UIAppFonts`. The string must match either the
+/// PostScript name (`ArimoNF-Regular`) or the family name embedded
+/// in the TTF — *not* the filename. Defined once here so future
+/// font swaps only need to update one place.
 public enum UboIconFont {
-    public static let family = "ArimoNerdFont"
+    public static let family = "Arimo Nerd Font"
 }
 
 public struct IconView: View {

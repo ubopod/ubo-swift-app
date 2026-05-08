@@ -10,7 +10,7 @@
 import SwiftUI
 
 public enum UboIconFont {
-    public static let family = "ArimoNerdFont"
+    public static let family = "Arimo Nerd Font"
 }
 
 public struct IconView: View {
