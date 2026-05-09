@@ -25,6 +25,7 @@ class DeviceViewModel {
     private(set) var cachedTemperature: Float?
     private(set) var cachedPlaybackVolume: Float?
     private(set) var cachedIsPlaybackMute: Bool?
+    private(set) var cachedIsCaptureMute: Bool?
 
     private var cancellables = Set<AnyCancellable>()
     private var cameraObservationTask: Task<Void, Never>?
@@ -78,6 +79,7 @@ class DeviceViewModel {
                     self?.cachedTemperature = stats.temperature
                     self?.cachedPlaybackVolume = stats.playbackVolume
                     self?.cachedIsPlaybackMute = stats.isPlaybackMute
+                    self?.cachedIsCaptureMute = stats.isCaptureMute
                     self?.updateWidgetData()
                 }
             }

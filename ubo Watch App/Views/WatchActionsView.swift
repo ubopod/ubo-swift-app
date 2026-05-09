@@ -14,6 +14,13 @@ import UboSwift
 struct WatchActionsView: View {
     @Environment(DeviceViewModel.self) private var viewModel
 
+    @State private var showPowerAlert = false
+    @State private var powerAction: PowerAction?
+
+    enum PowerAction {
+        case reboot, powerOff
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -44,6 +51,17 @@ struct WatchActionsView: View {
                             systemImage: (viewModel.cachedIsPlaybackMute ?? false)
                                 ? "speaker.fill"
                                 : "speaker.slash.fill"
+                        )
+                    }
+
+                    Button {
+                        Task { try? await viewModel.client.toggleMute(device: .input) }
+                    } label: {
+                        Label(
+                            (viewModel.cachedIsCaptureMute ?? false) ? "Unmute Mic" : "Mute Mic",
+                            systemImage: (viewModel.cachedIsCaptureMute ?? false)
+                                ? "mic.slash.fill"
+                                : "mic.fill"
                         )
                     }
                 }
@@ -89,8 +107,48 @@ struct WatchActionsView: View {
                         Label("Toggle Assistant", systemImage: "waveform.circle.fill")
                     }
                 }
+
+                Section("Power") {
+                    Button {
+                        powerAction = .reboot
+                        showPowerAlert = true
+                    } label: {
+                        Label("Reboot", systemImage: "arrow.triangle.2.circlepath")
+                    }
+
+                    Button(role: .destructive) {
+                        powerAction = .powerOff
+                        showPowerAlert = true
+                    } label: {
+                        Label("Power Off", systemImage: "power")
+                    }
+                }
             }
             .navigationTitle("Actions")
+            .alert("Confirm Action", isPresented: $showPowerAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button(powerAction == .reboot ? "Reboot" : "Power Off", role: .destructive) {
+                    performPowerAction()
+                }
+            } message: {
+                Text(powerAction == .reboot
+                    ? "Reboot the device?"
+                    : "Power off the device?")
+            }
+        }
+    }
+
+    private func performPowerAction() {
+        Task {
+            switch powerAction {
+            case .reboot:
+                try? await viewModel.client.reboot()
+            case .powerOff:
+                try? await viewModel.client.powerOff()
+            case .none:
+                break
+            }
+            await viewModel.disconnect()
         }
     }
 
