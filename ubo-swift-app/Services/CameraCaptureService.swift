@@ -1,6 +1,20 @@
 import AVFoundation
 import Foundation
 
+enum CameraError: Error, LocalizedError {
+    case noCameraAvailable
+    case inputCreationFailed
+    case permissionDenied
+
+    var errorDescription: String? {
+        switch self {
+        case .noCameraAvailable: return "No camera available on this device"
+        case .inputCreationFailed: return "Could not initialize camera input"
+        case .permissionDenied: return "Camera permission denied"
+        }
+    }
+}
+
 protocol CameraCaptureDelegate: AnyObject {
     func cameraCaptureService(
         _ service: CameraCaptureService,
@@ -8,6 +22,11 @@ protocol CameraCaptureDelegate: AnyObject {
         width: Int,
         height: Int,
         timestamp: Double
+    )
+
+    func cameraCaptureService(
+        _ service: CameraCaptureService,
+        didFailWithError error: CameraError
     )
 }
 
@@ -28,6 +47,10 @@ final class CameraCaptureService: NSObject {
 
     private(set) var isRunning = false
 
+    /// Position we're currently configured for (read on sessionQueue only).
+    private var currentPosition: AVCaptureDevice.Position = .back
+    private var currentInput: AVCaptureDeviceInput?
+
     override init() {
         rgbBufferSize = 240 * 240 * 3
         super.init()
@@ -38,9 +61,11 @@ final class CameraCaptureService: NSObject {
         rgbBuffer?.deallocate()
     }
 
-    func start() {
+    func start(position: AVCaptureDevice.Position = .back) {
         sessionQueue.async { [weak self] in
-            self?.configureAndStart()
+            guard let self else { return }
+            self.currentPosition = position
+            self.configureAndStart()
         }
     }
 
@@ -52,21 +77,69 @@ final class CameraCaptureService: NSObject {
         }
     }
 
+    /// Hot-swap front/rear without tearing down the entire session.
+    func switchPosition(to newPosition: AVCaptureDevice.Position) {
+        sessionQueue.async { [weak self] in
+            guard let self, self.isRunning else { return }
+            guard self.currentPosition != newPosition else { return }
+
+            self.captureSession.beginConfiguration()
+            if let oldInput = self.currentInput {
+                self.captureSession.removeInput(oldInput)
+                self.currentInput = nil
+            }
+
+            guard let camera = self.resolveCamera(for: newPosition),
+                  let input = try? AVCaptureDeviceInput(device: camera),
+                  self.captureSession.canAddInput(input) else {
+                self.captureSession.commitConfiguration()
+                self.delegate?.cameraCaptureService(self, didFailWithError: .noCameraAvailable)
+                return
+            }
+
+            self.captureSession.addInput(input)
+            self.currentInput = input
+            self.currentPosition = newPosition
+            self.captureSession.commitConfiguration()
+        }
+    }
+
+    /// Try every camera type at the requested position, then fall back to the
+    /// opposite position, then to whatever default video device exists. On
+    /// simulator / iPad-without-back-camera this is the difference between
+    /// "blank black screen" and "front camera renders".
+    private func resolveCamera(for position: AVCaptureDevice.Position) -> AVCaptureDevice? {
+        let discovery = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInWideAngleCamera, .builtInDualCamera, .builtInTripleCamera],
+            mediaType: .video,
+            position: position
+        )
+        return discovery.devices.first
+            ?? AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: position)
+            ?? AVCaptureDevice.default(for: .video)
+    }
+
     private func configureAndStart() {
         guard !isRunning else { return }
 
         captureSession.beginConfiguration()
         captureSession.sessionPreset = .medium
 
-        // Add camera input
-        guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-              let input = try? AVCaptureDeviceInput(device: camera) else {
+        guard let camera = resolveCamera(for: currentPosition) else {
             captureSession.commitConfiguration()
+            delegate?.cameraCaptureService(self, didFailWithError: .noCameraAvailable)
+            return
+        }
+
+        guard let input = try? AVCaptureDeviceInput(device: camera) else {
+            captureSession.commitConfiguration()
+            delegate?.cameraCaptureService(self, didFailWithError: .inputCreationFailed)
             return
         }
 
         if captureSession.canAddInput(input) {
             captureSession.addInput(input)
+            currentInput = input
         }
 
         // Add video output

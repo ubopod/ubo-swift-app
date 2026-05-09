@@ -6,6 +6,8 @@ import UboSwift
 @Observable
 final class CameraManager: CameraCaptureDelegate {
     private(set) var isActive = false
+    private(set) var lastError: CameraError?
+    private(set) var position: AVCaptureDevice.Position = .back
 
     private let captureService = CameraCaptureService()
     private var client: UboClient?
@@ -24,16 +26,18 @@ final class CameraManager: CameraCaptureDelegate {
     func startCamera() {
         guard !isActive else { return }
         isActive = true
+        lastError = nil
 
         Task {
             let granted = await CameraCaptureService.requestPermission()
             guard granted else {
+                lastError = .permissionDenied
                 isActive = false
                 return
             }
 
             captureService.delegate = self
-            captureService.start()
+            captureService.start(position: position)
             startDispatchLoop()
         }
     }
@@ -50,6 +54,14 @@ final class CameraManager: CameraCaptureDelegate {
         isActive = false
     }
 
+    /// Flip between front and rear cameras while the session keeps running.
+    func switchPosition() {
+        let newPosition: AVCaptureDevice.Position = (position == .back) ? .front : .back
+        position = newPosition
+        lastError = nil
+        captureService.switchPosition(to: newPosition)
+    }
+
     // MARK: - CameraCaptureDelegate
 
     nonisolated func cameraCaptureService(
@@ -62,6 +74,20 @@ final class CameraManager: CameraCaptureDelegate {
         frameLock.lock()
         pendingFrame = (data: data, width: width, height: height, timestamp: Float(timestamp))
         frameLock.unlock()
+    }
+
+    nonisolated func cameraCaptureService(
+        _ service: CameraCaptureService,
+        didFailWithError error: CameraError
+    ) {
+        Task { @MainActor [weak self] in
+            self?.lastError = error
+            // Keep isActive true if the error came from a switch (so the user
+            // can flip back); only clear it on the initial start failure.
+            if !service.isRunning {
+                self?.isActive = false
+            }
+        }
     }
 
     // MARK: - Dispatch Loop
