@@ -629,7 +629,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
 				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp;_uborpc._tcp";
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses your camera to send images to your Ubo device.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses your microphone to talk to the Ubo assistant.";
 				INFOPLIST_KEY_UIAppFonts = "ArimoNerdFont-Regular.ttf";
@@ -668,7 +667,6 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
 				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp;_uborpc._tcp";
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses your camera to send images to your Ubo device.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses your microphone to talk to the Ubo assistant.";
 				INFOPLIST_KEY_UIAppFonts = "ArimoNerdFont-Regular.ttf";

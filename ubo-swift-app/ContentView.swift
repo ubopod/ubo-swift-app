@@ -62,7 +62,7 @@ struct ContentView: View {
             }
         )) {
             CameraOverlayView(
-                session: viewModel.cameraManager.captureSession,
+                cameraManager: viewModel.cameraManager,
                 pattern: viewModel.client.cameraPattern,
                 onDismiss: {
                     viewModel.cameraManager.stopCamera()
