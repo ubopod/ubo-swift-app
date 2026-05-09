@@ -102,6 +102,18 @@ struct WatchActionsView: View {
 
                 Section("Assistant") {
                     Button {
+                        Task { await viewModel.toggleMicCapture() }
+                    } label: {
+                        Label(
+                            viewModel.micCapture.isRunning ? "Stop Talking" : "Push to Talk",
+                            systemImage: viewModel.micCapture.isRunning
+                                ? "mic.fill"
+                                : "mic.circle"
+                        )
+                        .foregroundStyle(viewModel.micCapture.isRunning ? Color.red : Color.primary)
+                    }
+
+                    Button {
                         Task { try? await viewModel.client.toggleAssistantListening() }
                     } label: {
                         Label("Toggle Assistant", systemImage: "waveform.circle.fill")
