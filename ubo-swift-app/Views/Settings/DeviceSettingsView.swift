@@ -193,10 +193,30 @@ struct DeviceSettingsView: View {
             } label: {
                 Label("Play Test Chime", systemImage: "bell.fill")
             }
+
+            // Microphone — controls the device's own input mute (not the
+            // iPhone's PCM stream from `MicCaptureService`). Independent
+            // toggle so users can quiet the Pi's mic without stopping the
+            // push-to-talk pipeline.
+            Toggle(
+                isOn: Binding(
+                    get: { viewModel.cachedIsCaptureMute ?? false },
+                    set: { newValue in
+                        Task { try? await viewModel.client.setMute(newValue, device: .input) }
+                    }
+                )
+            ) {
+                Label(
+                    "Mute Device Microphone",
+                    systemImage: (viewModel.cachedIsCaptureMute ?? false)
+                        ? "mic.slash.fill"
+                        : "mic.fill"
+                )
+            }
         } header: {
             Text("Audio")
         } footer: {
-            Text("Volume changes propagate to and from the device — hardware buttons, the Watch, and other connected clients stay in sync.")
+            Text("Volume changes propagate to and from the device — hardware buttons, the Watch, and other connected clients stay in sync. Muting the device microphone stops the Pi from listening; the push-to-talk button below streams audio from this iPhone separately.")
         }
     }
 
