@@ -7,6 +7,7 @@ import UboSwift
 class DeviceViewModel {
     let client = UboClient()
     let audioPlayback = AudioPlaybackService()
+    let micCapture = MicCaptureService()
 
     // Observable state - updated from client
     private(set) var isConnecting: Bool = false
@@ -142,6 +143,7 @@ class DeviceViewModel {
         client.startInputsSubscription()
         audioPlayback.configure(client: client)
         audioPlayback.start()
+        micCapture.configure(client: client)
     }
 
     func connectWithSavedSettings() async throws {
@@ -150,7 +152,20 @@ class DeviceViewModel {
     }
 
     func disconnect() async {
+        micCapture.stop()
         audioPlayback.stop()
         await client.disconnect()
+    }
+
+    /// Toggle "press to talk" mic capture on the Watch. Streams PCM16 frames
+    /// to the device's assistant pipeline; mirrors `iOS DeviceViewModel`.
+    func toggleMicCapture() async {
+        if micCapture.isRunning {
+            micCapture.stop()
+            try? await client.stopAssistantListening()
+        } else {
+            try? await client.startAssistantListening()
+            try? await micCapture.start()
+        }
     }
 }
