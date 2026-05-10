@@ -2,6 +2,9 @@ import SwiftUI
 import Combine
 import WidgetKit
 import UboSwift
+#if canImport(UIKit)
+import UIKit
+#endif
 
 @MainActor
 @Observable
@@ -29,6 +32,30 @@ class DeviceViewModel {
 
     private var cancellables = Set<AnyCancellable>()
     private var cameraObservationTask: Task<Void, Never>?
+    private var cameraDetectAdvertiseCancellable: AnyCancellable?
+
+    /// Stable id under which this iPhone advertises itself as a camera
+    /// source to the Pi. Generated once on first launch and persisted; the
+    /// Pi uses it to route `CameraStartViewfinderEvent`s and to drop
+    /// frames from sources it didn't pick.
+    private var cameraSourceId: String {
+        if let existing = UserDefaults.standard.string(forKey: "cameraSourceId") {
+            return existing
+        }
+        let new = "remote:\(UUID().uuidString)"
+        UserDefaults.standard.set(new, forKey: "cameraSourceId")
+        return new
+    }
+
+    /// Human-readable label shown in the Pi's camera picker.
+    private var cameraSourceLabel: String {
+        #if canImport(UIKit)
+        let name = UIDevice.current.name
+        return name.isEmpty ? "iPhone" : name
+        #else
+        return "iPhone"
+        #endif
+    }
 
     init() {
         // Observe client's published properties
@@ -166,12 +193,14 @@ class DeviceViewModel {
         savedHost = host
         savedPort = port
         try await client.connect(host: host, port: port, subscribeToDisplay: false)
+        client.cameraSourceId = cameraSourceId
         client.startViewSubscription()
         client.startStatsSubscription()
         client.startCameraSubscription()
         client.startInputsSubscription()
         cameraManager.configure(client: client)
         startCameraObservation()
+        startCameraRegistrationListener()
         micCapture.configure(client: client)
         audioPlayback.configure(client: client)
         audioPlayback.start()
@@ -185,6 +214,8 @@ class DeviceViewModel {
     func disconnect() async {
         cameraObservationTask?.cancel()
         cameraObservationTask = nil
+        cameraDetectAdvertiseCancellable?.cancel()
+        cameraDetectAdvertiseCancellable = nil
         cameraManager.stopCamera()
         micCapture.stop()
         audioPlayback.stop()
@@ -201,6 +232,25 @@ class DeviceViewModel {
             try? await client.startAssistantListening()
             try? await micCapture.start()
         }
+    }
+
+    // MARK: - Camera Source Registration
+
+    /// Subscribe to the device's `CameraDetectAdvertiseEvent` stream and
+    /// (re-)register this iPhone as a camera source on every yield. The
+    /// Pi clears its pending registration buffer at the end of each
+    /// detect cycle, so we have to respond on every advertise event to
+    /// stay listed.
+    private func startCameraRegistrationListener() {
+        let id = cameraSourceId
+        let label = cameraSourceLabel
+        let client = self.client
+        cameraDetectAdvertiseCancellable?.cancel()
+        cameraDetectAdvertiseCancellable = client.cameraDetectAdvertiseSubject
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                Task { try? await client.registerAsCameraSource(id: id, label: label) }
+            }
     }
 
     // MARK: - Camera Observation
