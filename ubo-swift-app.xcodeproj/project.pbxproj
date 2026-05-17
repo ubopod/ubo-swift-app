@@ -96,7 +96,6 @@
 		3BD215162F3D4705001771F9 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		3BD215182F3D4705001771F9 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		3BD215322F3D4FA3001771F9 /* UboWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = UboWidgetsExtension.entitlements; sourceTree = "<group>"; };
-		3BUBOSWIFT0005 /* ubo-swift-grpc */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "ubo-swift-grpc"; path = "../ubo-swift-grpc"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -217,7 +216,6 @@
 				3B12D7CF2F2AA2BD00C9B856 /* ubo Watch App */,
 				3B12D7DD2F2AA2BD00C9B856 /* ubo Watch AppTests */,
 				3B12D7E72F2AA2BD00C9B856 /* ubo Watch AppUITests */,
-				3BUBOSWIFT0006 /* Packages */,
 				3BD2151A2F3D4705001771F9 /* UboWidgets */,
 				3BD215152F3D4705001771F9 /* Frameworks */,
 				3B2BFCF62F2A9EB8009F6CB1 /* Products */,
@@ -245,14 +243,6 @@
 				3BD215182F3D4705001771F9 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		3BUBOSWIFT0006 /* Packages */ = {
-			isa = PBXGroup;
-			children = (
-				3BUBOSWIFT0005 /* ubo-swift-grpc */,
-			);
-			name = Packages;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -469,7 +459,7 @@
 			mainGroup = 3B2BFCEC2F2A9EB8009F6CB1;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				3BUBOSWIFT0007 /* XCLocalSwiftPackageReference "../ubo-swift-grpc" */,
+				3BUBOSWIFT0007 /* XCRemoteSwiftPackageReference "ubo-swift-grpc" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3B2BFCF62F2A9EB8009F6CB1 /* Products */;
@@ -634,13 +624,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 94M4XX8GM6;
+				DEVELOPMENT_TEAM = 98A45DRR2Y;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
-				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses your camera to send images to your Ubo device.";
+				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp;_uborpc._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses your microphone to talk to the Ubo assistant.";
+				INFOPLIST_KEY_UIAppFonts = "ArimoNerdFont-Regular.ttf";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "ubopod.ubo-swift-app";
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
@@ -660,7 +651,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.2;
+				WATCHOS_DEPLOYMENT_TARGET = 11;
 			};
 			name = Debug;
 		};
@@ -671,13 +662,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 94M4XX8GM6;
+				DEVELOPMENT_TEAM = 98A45DRR2Y;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
-				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses your camera to send images to your Ubo device.";
+				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp;_uborpc._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses your microphone to talk to the Ubo assistant.";
+				INFOPLIST_KEY_UIAppFonts = "ArimoNerdFont-Regular.ttf";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "ubopod.ubo-swift-app";
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
@@ -698,7 +690,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
-				WATCHOS_DEPLOYMENT_TARGET = 26.2;
+				WATCHOS_DEPLOYMENT_TARGET = 11;
 			};
 			name = Release;
 		};
@@ -917,16 +909,18 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 94M4XX8GM6;
+				DEVELOPMENT_TEAM = 98A45DRR2Y;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
+				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp;_uborpc._tcp";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses your camera to send images to your Ubo device.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses your microphone to talk to the Ubo assistant.";
+				INFOPLIST_KEY_UIAppFonts = "ArimoNerdFont-Regular.ttf";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -937,12 +931,13 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ubopod.ubo-swift-app";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "uboapp.swift-app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
@@ -968,16 +963,18 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 94M4XX8GM6;
+				DEVELOPMENT_TEAM = 98A45DRR2Y;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp";
+				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp;_uborpc._tcp";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses your camera to send images to your Ubo device.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses your microphone to talk to the Ubo assistant.";
+				INFOPLIST_KEY_UIAppFonts = "ArimoNerdFont-Regular.ttf";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -988,12 +985,13 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ubopod.ubo-swift-app";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "uboapp.swift-app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
@@ -1256,20 +1254,26 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		3BUBOSWIFT0007 /* XCLocalSwiftPackageReference "../ubo-swift-grpc" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../ubo-swift-grpc";
+/* Begin XCRemoteSwiftPackageReference section */
+		3BUBOSWIFT0007 /* XCRemoteSwiftPackageReference "ubo-swift-grpc" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ubopod/ubo-swift-grpc.git";
+			requirement = {
+				branch = dev;
+				kind = branch;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		3BUBOSWIFT0002 /* UboSwift */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 3BUBOSWIFT0007 /* XCRemoteSwiftPackageReference "ubo-swift-grpc" */;
 			productName = UboSwift;
 		};
 		3BUBOSWIFT0004 /* UboSwift */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 3BUBOSWIFT0007 /* XCRemoteSwiftPackageReference "ubo-swift-grpc" */;
 			productName = UboSwift;
 		};
 /* End XCSwiftPackageProductDependency section */

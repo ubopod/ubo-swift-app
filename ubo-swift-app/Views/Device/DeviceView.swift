@@ -11,8 +11,26 @@ import UboSwift
 struct DeviceView: View {
     @Environment(DeviceViewModel.self) private var viewModel
 
+    /// IDs of input demands the user already resolved (Cancel/Submit) on
+    /// this client. Filters them out of the sheet binding so the form
+    /// doesn't re-present while the server's state update is in flight.
+    @State private var dismissedInputIds: Set<String> = []
+
+    private var showsStatusBar: Bool {
+        viewModel.currentView?.showStatusBar ?? false
+    }
+
     var body: some View {
         NavigationStack {
+            VStack(spacing: 0) {
+                if showsStatusBar {
+                    StatusBarOverlay(
+                        bar: viewModel.statusBar,
+                        cpuPercent: viewModel.cpuPercent,
+                        ramPercent: viewModel.ramPercent,
+                        temperature: viewModel.temperature
+                    )
+                }
             Group {
                 switch viewModel.currentView {
                 case .home(let data):
@@ -23,15 +41,31 @@ struct DeviceView: View {
                     NotificationDeviceView(data: data)
                 case .application(let data):
                     ApplicationDeviceView(data: data)
+                case .instruction(let data):
+                    InstructionDeviceView(data: data)
+                case .prompt(let data):
+                    PromptDeviceView(data: data)
+                case .render(let data):
+                    RenderDeviceView(data: data)
                 case .none:
                     loadingView
                 }
             }
-            .navigationTitle(navigationTitle)
+            .navigationTitle(splitLeadingGlyph(navigationTitle).label)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    let split = splitLeadingGlyph(navigationTitle)
+                    HStack(spacing: 4) {
+                        if let glyph = split.icon {
+                            IconView(icon: glyph, size: 16)
+                        }
+                        markupText(split.label)
+                            .font(.headline)
+                    }
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     if showBackButton {
                         Button {
@@ -51,6 +85,34 @@ struct DeviceView: View {
                         Image(systemName: "house")
                     }
                 }
+
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        triggerHaptic()
+                        Task { await viewModel.toggleMicCapture() }
+                    } label: {
+                        Image(systemName: viewModel.micCapture.isRunning ? "mic.fill" : "mic")
+                            .foregroundStyle(viewModel.micCapture.isRunning ? Color.red : Color.primary)
+                    }
+                    .accessibilityLabel(viewModel.micCapture.isRunning ? "Stop microphone" : "Start microphone")
+                }
+            }
+            .sheet(item: Binding<WebUIInputDescription?>(
+                get: {
+                    viewModel.activeInputs.first { !dismissedInputIds.contains($0.id) }
+                },
+                set: { _ in /* dismissal driven by onClose + server state */ }
+            )) { description in
+                InputFormView(description: description) {
+                    dismissedInputIds.insert(description.id)
+                }
+                .environment(viewModel)
+            }
+            .onChange(of: viewModel.activeInputs.map(\.id)) { _, ids in
+                // Drop dismissals for inputs the server has already resolved
+                // so future demands with new ids are presented again.
+                dismissedInputIds.formIntersection(ids)
+            }
             }
         }
     }
@@ -65,6 +127,12 @@ struct DeviceView: View {
             return "Notification"
         case .application(let data):
             return data.applicationId
+        case .instruction(let data):
+            return data.title.isEmpty ? "Instruction" : data.title
+        case .prompt(let data):
+            return data.title.isEmpty ? "Prompt" : data.title
+        case .render(let data):
+            return data.title.isEmpty ? "Render" : data.title
         case .none:
             return "Device"
         }
@@ -153,24 +221,26 @@ struct HomeMenuCard: View {
         return item.key.prefix(1).uppercased() + item.key.dropFirst()
     }
 
-    // Use icon if available, otherwise try to map from key
+    // Pick the original glyph if any, otherwise the menu key as a
+    // semantic fallback. IconView handles the Nerd-Font-vs-SF-Symbol
+    // dispatch internally.
     private var displayIcon: String {
-        let iconSource = item.icon.isEmpty ? item.key : item.icon
-        return mapIcon(iconSource)
+        item.icon.isEmpty ? item.key : item.icon
     }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
-                // Icon
-                Image(systemName: displayIcon)
-                    .font(.title2)
-                    .foregroundStyle(Color(hex: item.color) ?? .accentColor)
-                    .frame(width: 44, height: 44)
-                    .background {
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill((Color(hex: item.color) ?? .accentColor).opacity(0.15))
-                    }
+                IconView(
+                    icon: displayIcon,
+                    size: 24,
+                    color: uboIconColor(forHex: item.color, fallback: .accentColor)
+                )
+                .frame(width: 44, height: 44)
+                .background {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(uboIconColor(forHex: item.color, fallback: .accentColor).opacity(0.15))
+                }
 
                 // Label
                 Text(displayLabel)
@@ -236,16 +306,30 @@ struct MenuDeviceView: View {
 
     var body: some View {
         List {
-            // Heading if present
-            if let heading = data.heading, !heading.isEmpty {
+            // Heading + sub-heading (HeadedMenu) — Web UI renders both in
+            // its tile grid; the GUI client paints them as a stacked
+            // header. We mirror the same hierarchy here.
+            if (data.heading?.isEmpty == false) || (data.subHeading?.isEmpty == false) {
                 Section {
-                    Text(heading)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        if let heading = data.heading, !heading.isEmpty {
+                            markupText(heading)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let subHeading = data.subHeading, !subHeading.isEmpty {
+                            markupText(subHeading)
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 }
             }
 
-            // Menu items
+            // Menu items — render the full list. The Python core's
+            // page_index/total_pages are GUI-client-only concerns
+            // (small fixed display); on touch devices the user
+            // scrolls natively.
             Section {
                 ForEach(data.items.compactMap { $0 }, id: \.key) { item in
                     MenuItemRow(item: item) {
@@ -254,40 +338,6 @@ struct MenuDeviceView: View {
                             try? await viewModel.client.selectMenuItem(label: item.label)
                         }
                     }
-                }
-            }
-
-            // Pagination
-            if data.totalPages > 1 {
-                Section {
-                    HStack {
-                        Button {
-                            triggerHaptic()
-                            Task { try? await viewModel.client.scrollUp() }
-                        } label: {
-                            Image(systemName: "chevron.up.circle.fill")
-                                .font(.title2)
-                        }
-                        .disabled(data.pageIndex == 0)
-
-                        Spacer()
-
-                        Text("Page \(data.pageIndex + 1) of \(data.totalPages)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                        Spacer()
-
-                        Button {
-                            triggerHaptic()
-                            Task { try? await viewModel.client.scrollDown() }
-                        } label: {
-                            Image(systemName: "chevron.down.circle.fill")
-                                .font(.title2)
-                        }
-                        .disabled(data.pageIndex >= data.totalPages - 1)
-                    }
-                    .padding(.vertical, 4)
                 }
             }
         }
@@ -323,31 +373,50 @@ struct NotificationDeviceView: View {
 
                 // Title & Content
                 VStack(spacing: 8) {
-                    Text(data.title)
+                    markupText(data.title)
                         .font(.title2.bold())
                         .multilineTextAlignment(.center)
 
-                    Text(data.content)
+                    markupText(data.content)
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal)
 
-                // Extra information
+                // Web UI parity: split items into main / extra_info / dismiss.
+                let partitioned = partitionNotificationItems(data.items)
+
+                // Extra information (paired with the optional `extra_info`
+                // accent button if one was sent).
                 if !data.extraInformation.isEmpty {
                     GroupBox {
-                        Text(data.extraInformation)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
+                        HStack(alignment: .top, spacing: 8) {
+                            markupText(data.extraInformation)
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if let action = partitioned.extraInfo {
+                                Button {
+                                    triggerHaptic()
+                                    Task {
+                                        try? await viewModel.client.selectMenuItem(label: action.label)
+                                    }
+                                } label: {
+                                    Image(systemName: "speaker.wave.2.circle.fill")
+                                        .font(.title2)
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                        }
                     }
                     .padding(.horizontal)
                 }
 
-                // Action buttons
-                if !data.items.isEmpty {
+                // Action buttons (dismiss / extra_info already filtered out).
+                if !partitioned.mainActions.isEmpty {
                     VStack(spacing: 10) {
-                        ForEach(data.items.compactMap { $0 }, id: \.key) { item in
+                        ForEach(partitioned.mainActions, id: \.key) { item in
                             Button {
                                 triggerHaptic()
                                 Task {
@@ -355,7 +424,7 @@ struct NotificationDeviceView: View {
                                 }
                             } label: {
                                 HStack {
-                                    Text(item.label)
+                                    markupText(item.label)
                                         .fontWeight(.medium)
                                     Spacer()
                                     Image(systemName: "chevron.right")
@@ -374,13 +443,16 @@ struct NotificationDeviceView: View {
                     .padding(.horizontal)
                 }
 
-                // Dismiss
-                Button("Dismiss") {
-                    triggerHaptic()
-                    Task { try? await viewModel.client.goBack() }
+                // Dismiss footer (only offered when the device sent a
+                // dismiss item or there's nothing else actionable).
+                if partitioned.hasDismiss || partitioned.mainActions.isEmpty {
+                    Button("Dismiss") {
+                        triggerHaptic()
+                        Task { try? await viewModel.client.goBack() }
+                    }
+                    .buttonStyle(.bordered)
+                    .padding(.top)
                 }
-                .buttonStyle(.bordered)
-                .padding(.top)
             }
             .padding(.bottom, 32)
         }

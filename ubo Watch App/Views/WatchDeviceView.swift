@@ -11,8 +11,25 @@ import UboSwift
 struct WatchDeviceView: View {
     @Environment(DeviceViewModel.self) private var viewModel
 
+    /// IDs of input demands the user already resolved on this client.
+    /// Filters them out of the sheet binding so the form doesn't
+    /// re-present while the server's state update is in flight.
+    @State private var dismissedInputIds: Set<String> = []
+
+    private var showsStatusBar: Bool {
+        viewModel.currentView?.showStatusBar ?? false
+    }
+
     var body: some View {
         VStack(spacing: 0) {
+            if showsStatusBar {
+                WatchStatusBarOverlay(
+                    bar: viewModel.statusBar,
+                    cpuPercent: viewModel.cpuPercent,
+                    ramPercent: viewModel.ramPercent,
+                    temperature: viewModel.temperature
+                )
+            }
             // Header with title and nav buttons
             HStack {
                 if showBackButton {
@@ -27,10 +44,16 @@ struct WatchDeviceView: View {
 
                 Spacer()
 
-                Text(navigationTitle)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .lineLimit(1)
+                let titleSplit = splitLeadingGlyph(navigationTitle)
+                HStack(spacing: 3) {
+                    if let glyph = titleSplit.icon {
+                        IconView(icon: glyph, size: 11)
+                    }
+                    markupText(titleSplit.label)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .lineLimit(1)
+                }
 
                 Spacer()
 
@@ -56,10 +79,30 @@ struct WatchDeviceView: View {
                     WatchNotificationView(data: data)
                 case .application(let data):
                     WatchApplicationView(data: data)
+                case .instruction(let data):
+                    WatchInstructionView(data: data)
+                case .prompt(let data):
+                    WatchPromptView(data: data)
+                case .render(let data):
+                    WatchRenderView(data: data)
                 case .none:
                     loadingView
                 }
             }
+        }
+        .sheet(item: Binding<WebUIInputDescription?>(
+            get: {
+                viewModel.activeInputs.first { !dismissedInputIds.contains($0.id) }
+            },
+            set: { _ in /* dismissal driven by onClose + server state */ }
+        )) { description in
+            WatchInputFormView(description: description) {
+                dismissedInputIds.insert(description.id)
+            }
+            .environment(viewModel)
+        }
+        .onChange(of: viewModel.activeInputs.map(\.id)) { _, ids in
+            dismissedInputIds.formIntersection(ids)
         }
     }
 
@@ -73,6 +116,12 @@ struct WatchDeviceView: View {
             return "Alert"
         case .application(let data):
             return String(data.applicationId.prefix(10))
+        case .instruction(let data):
+            return data.title.isEmpty ? "Wait" : String(data.title.prefix(10))
+        case .prompt(let data):
+            return data.title.isEmpty ? "Prompt" : String(data.title.prefix(10))
+        case .render(let data):
+            return data.title.isEmpty ? "Render" : String(data.title.prefix(10))
         case .none:
             return "Device"
         }
@@ -117,10 +166,12 @@ struct WatchHomeView: View {
                     }
                 } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: displayIcon(for: item))
-                            .font(.caption)
-                            .foregroundStyle(Color(hex: item.color) ?? .accentColor)
-                            .frame(width: 20)
+                        IconView(
+                            icon: item.icon.isEmpty ? item.key : item.icon,
+                            size: 14,
+                            color: uboIconColor(forHex: item.color, fallback: .accentColor)
+                        )
+                        .frame(width: 20)
 
                         Text(displayLabel(for: item))
                             .font(.caption)
@@ -181,15 +232,28 @@ struct WatchMenuView: View {
 
     var body: some View {
         List {
-            // Heading if present
-            if let heading = data.heading, !heading.isEmpty {
-                Text(heading)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .listRowBackground(Color.clear)
+            // Heading + sub-heading (HeadedMenu). Web UI renders both above
+            // its tile grid; we keep the same stack on the watch, sized
+            // for the smaller screen.
+            if (data.heading?.isEmpty == false) || (data.subHeading?.isEmpty == false) {
+                VStack(alignment: .leading, spacing: 1) {
+                    if let heading = data.heading, !heading.isEmpty {
+                        markupText(heading)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let subHeading = data.subHeading, !subHeading.isEmpty {
+                        markupText(subHeading)
+                            .font(.system(size: 9))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .listRowBackground(Color.clear)
             }
 
-            // Menu items
+            // Menu items — render the full list. page_index /
+            // total_pages are GUI-client concerns; the watch
+            // scrolls natively.
             ForEach(data.items.compactMap { $0 }, id: \.key) { item in
                 Button {
                     Task {
@@ -198,34 +262,6 @@ struct WatchMenuView: View {
                 } label: {
                     WatchMenuItemRow(item: item)
                 }
-            }
-
-            // Pagination controls
-            if data.totalPages > 1 {
-                HStack {
-                    Button {
-                        Task { try? await viewModel.client.scrollUp() }
-                    } label: {
-                        Image(systemName: "chevron.up")
-                    }
-                    .disabled(data.pageIndex == 0)
-
-                    Spacer()
-
-                    Text("\(data.pageIndex + 1)/\(data.totalPages)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Button {
-                        Task { try? await viewModel.client.scrollDown() }
-                    } label: {
-                        Image(systemName: "chevron.down")
-                    }
-                    .disabled(data.pageIndex >= data.totalPages - 1)
-                }
-                .listRowBackground(Color.clear)
             }
         }
         .listStyle(.carousel)
@@ -237,12 +273,14 @@ struct WatchMenuItemRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: mapIcon(item.icon))
-                .font(.caption)
-                .foregroundStyle(Color(hex: item.color) ?? .accentColor)
-                .frame(width: 20)
+            IconView(
+                icon: item.icon,
+                size: 14,
+                color: uboIconColor(forHex: item.color, fallback: .accentColor)
+            )
+            .frame(width: 20)
 
-            Text(item.label)
+            markupText(item.label)
                 .font(.caption)
                 .lineLimit(2)
 
@@ -291,39 +329,58 @@ struct WatchNotificationView: View {
                     .foregroundStyle(Color(hex: data.color) ?? .accentColor)
 
                 // Title
-                Text(data.title)
+                markupText(data.title)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .multilineTextAlignment(.center)
 
                 // Content
-                Text(data.content)
+                markupText(data.content)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
 
-                // Action buttons
-                if !data.items.isEmpty {
-                    ForEach(data.items.compactMap { $0 }, id: \.key) { item in
+                // Split items the way the Web UI does — dismiss / extra_info
+                // shouldn't show up as full-width buttons.
+                let partitioned = partitionNotificationItems(data.items)
+
+                if let extra = partitioned.extraInfo {
+                    Button {
+                        Task {
+                            try? await viewModel.client.selectMenuItem(label: extra.label)
+                        }
+                    } label: {
+                        Label("Read Aloud", systemImage: "speaker.wave.2.circle.fill")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.accentColor)
+                }
+
+                if !partitioned.mainActions.isEmpty {
+                    ForEach(partitioned.mainActions, id: \.key) { item in
                         Button {
                             Task {
                                 try? await viewModel.client.selectMenuItem(label: item.label)
                             }
                         } label: {
-                            Text(item.label)
+                            markupText(item.label)
                                 .font(.caption2)
                         }
                         .buttonStyle(.bordered)
                     }
                 }
 
-                // Dismiss button
-                Button("Dismiss") {
-                    Task { try? await viewModel.client.goBack() }
+                // Dismiss footer — only shown when the device offered one or
+                // when there's nothing else to interact with.
+                if partitioned.hasDismiss || partitioned.mainActions.isEmpty {
+                    Button("Dismiss") {
+                        Task { try? await viewModel.client.goBack() }
+                    }
+                    .font(.caption2)
+                    .buttonStyle(.bordered)
+                    .tint(.secondary)
                 }
-                .font(.caption2)
-                .buttonStyle(.bordered)
-                .tint(.secondary)
             }
             .padding(.horizontal)
         }

@@ -6,6 +6,8 @@ import UboSwift
 @Observable
 class DeviceViewModel {
     let client = UboClient()
+    let audioPlayback = AudioPlaybackService()
+    let micCapture = MicCaptureService()
 
     // Observable state - updated from client
     private(set) var isConnecting: Bool = false
@@ -13,11 +15,15 @@ class DeviceViewModel {
     private(set) var currentView: ViewData?
     private(set) var statusBar: StatusBarData?
     private(set) var lastError: UboError?
+    private(set) var activeInputs: [WebUIInputDescription] = []
 
     // System stats - continuously updated from stats subscription
     private(set) var cachedCpuPercent: Float = 0
     private(set) var cachedRamPercent: Float = 0
     private(set) var cachedTemperature: Float?
+    private(set) var cachedPlaybackVolume: Float?
+    private(set) var cachedIsPlaybackMute: Bool?
+    private(set) var cachedIsCaptureMute: Bool?
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -52,6 +58,13 @@ class DeviceViewModel {
             }
             .store(in: &cancellables)
 
+        client.$activeInputs
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] inputs in
+                self?.activeInputs = inputs
+            }
+            .store(in: &cancellables)
+
         // Subscribe to system stats for continuous CPU/RAM/temperature updates
         client.$systemStats
             .receive(on: DispatchQueue.main)
@@ -60,6 +73,9 @@ class DeviceViewModel {
                     self?.cachedCpuPercent = stats.cpuPercent
                     self?.cachedRamPercent = stats.ramPercent
                     self?.cachedTemperature = stats.temperature
+                    self?.cachedPlaybackVolume = stats.playbackVolume
+                    self?.cachedIsPlaybackMute = stats.isPlaybackMute
+                    self?.cachedIsCaptureMute = stats.isCaptureMute
                 }
             }
             .store(in: &cancellables)
@@ -110,13 +126,6 @@ class DeviceViewModel {
         return []
     }
 
-    var menuPageInfo: (current: Int, total: Int)? {
-        if case .menu(let data) = currentView {
-            return (data.pageIndex, data.totalPages)
-        }
-        return nil
-    }
-
     // Notification view data helpers
     var notification: NotificationViewData? {
         if case .notification(let data) = currentView {
@@ -131,6 +140,10 @@ class DeviceViewModel {
         try await client.connect(host: host, port: port, subscribeToDisplay: false)
         client.startViewSubscription()
         client.startStatsSubscription()
+        client.startInputsSubscription()
+        audioPlayback.configure(client: client)
+        audioPlayback.start()
+        micCapture.configure(client: client)
     }
 
     func connectWithSavedSettings() async throws {
@@ -139,6 +152,20 @@ class DeviceViewModel {
     }
 
     func disconnect() async {
+        micCapture.stop()
+        audioPlayback.stop()
         await client.disconnect()
+    }
+
+    /// Toggle "press to talk" mic capture on the Watch. Streams PCM16 frames
+    /// to the device's assistant pipeline; mirrors `iOS DeviceViewModel`.
+    func toggleMicCapture() async {
+        if micCapture.isRunning {
+            micCapture.stop()
+            try? await client.stopAssistantListening()
+        } else {
+            try? await client.startAssistantListening()
+            try? await micCapture.start()
+        }
     }
 }

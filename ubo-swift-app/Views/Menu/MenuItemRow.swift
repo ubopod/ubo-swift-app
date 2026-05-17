@@ -15,10 +15,8 @@ struct MenuItemRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                // Icon
-                Image(systemName: mapIcon(item.icon))
-                    .font(.title3)
-                    .foregroundStyle(iconColor)
+                // Icon — Nerd Font glyph if private-use codepoint, SF Symbol otherwise.
+                IconView(icon: item.icon, size: 20, color: iconColor)
                     .frame(width: 32, height: 32)
                     .background {
                         if let bgColor = item.backgroundColor.flatMap({ Color(hex: $0) }) {
@@ -28,7 +26,7 @@ struct MenuItemRow: View {
                     }
 
                 // Label
-                Text(item.label)
+                markupText(item.label)
                     .font(.body)
                     .foregroundStyle(.primary)
 
@@ -45,7 +43,10 @@ struct MenuItemRow: View {
     }
 
     private var iconColor: Color {
-        Color(hex: item.color) ?? .accentColor
+        // Items default to white on the GUI client (dark display);
+        // route through `uboIconColor` so they stay visible in iOS
+        // light mode too.
+        uboIconColor(forHex: item.color, fallback: .accentColor)
     }
 
     private func mapIcon(_ icon: String) -> String {

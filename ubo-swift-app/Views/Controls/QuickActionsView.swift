@@ -2,7 +2,11 @@
 //  QuickActionsView.swift
 //  ubo-swift-app
 //
-//  Created by Nathan Perrier on 28/1/2026.
+//  Quick-access tile grid for one-shot device actions (chime, mute, LED
+//  presets, display sleep/wake, assistant). Volume lives in
+//  Settings → Audio so the slider can be live-bound to
+//  `state.audio.playback_volume` rather than the stale local @State this
+//  view used to host.
 //
 
 import SwiftUI
@@ -10,9 +14,6 @@ import UboSwift
 
 struct QuickActionsView: View {
     @Environment(DeviceViewModel.self) private var viewModel
-
-    @State private var showVolumeSlider = false
-    @State private var volumeValue: Double = 0.5
 
     private let columns = [
         GridItem(.adaptive(minimum: 80, maximum: 120), spacing: 12)
@@ -24,21 +25,12 @@ struct QuickActionsView: View {
                 .font(.headline)
 
             LazyVGrid(columns: columns, spacing: 12) {
-                // Audio Actions
                 ActionButton(
                     title: "Chime",
                     icon: "bell.fill",
                     color: .blue
                 ) {
                     Task { try? await viewModel.client.playChime(.done) }
-                }
-
-                ActionButton(
-                    title: "Volume",
-                    icon: volumeIcon,
-                    color: .indigo
-                ) {
-                    showVolumeSlider.toggle()
                 }
 
                 ActionButton(
@@ -49,7 +41,6 @@ struct QuickActionsView: View {
                     Task { try? await viewModel.client.toggleMute() }
                 }
 
-                // LED Actions
                 ActionButton(
                     title: "Rainbow",
                     icon: "rainbow",
@@ -74,7 +65,6 @@ struct QuickActionsView: View {
                     Task { try? await viewModel.client.clearLEDs() }
                 }
 
-                // Display Actions
                 ActionButton(
                     title: "Sleep",
                     icon: "moon.fill",
@@ -91,7 +81,6 @@ struct QuickActionsView: View {
                     Task { try? await viewModel.client.unblankDisplay() }
                 }
 
-                // Assistant
                 ActionButton(
                     title: "Assistant",
                     icon: "waveform.circle.fill",
@@ -101,17 +90,6 @@ struct QuickActionsView: View {
                 }
             }
         }
-        .sheet(isPresented: $showVolumeSlider) {
-            VolumeControlSheet(viewModel: viewModel)
-                .presentationDetents([.height(200)])
-        }
-    }
-
-    private var volumeIcon: String {
-        if volumeValue == 0 { return "speaker.slash.fill" }
-        if volumeValue < 0.33 { return "speaker.fill" }
-        if volumeValue < 0.66 { return "speaker.wave.1.fill" }
-        return "speaker.wave.3.fill"
     }
 }
 
@@ -166,73 +144,6 @@ struct ActionButton: View {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
         #endif
-    }
-}
-
-struct VolumeControlSheet: View {
-    let viewModel: DeviceViewModel
-
-    @State private var volume: Double = 0.5
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                Text("\(Int(volume * 100))%")
-                    .font(.title)
-                    .fontWeight(.semibold)
-
-                HStack {
-                    Image(systemName: "speaker.fill")
-                    Slider(value: $volume, in: 0...1) { editing in
-                        if !editing {
-                            Task {
-                                // setVolume expects 0-1 range
-                                try? await viewModel.client.setVolume(Float(volume))
-                            }
-                        }
-                    }
-                    Image(systemName: "speaker.wave.3.fill")
-                }
-                .padding(.horizontal)
-
-                HStack(spacing: 20) {
-                    Button("Mute") {
-                        volume = 0
-                        Task { try? await viewModel.client.setMute(true) }
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button("50%") {
-                        volume = 0.5
-                        Task { try? await viewModel.client.setVolume(0.5) }
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button("Max") {
-                        volume = 1.0
-                        Task { try? await viewModel.client.setVolume(1.0) }
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
-            .padding()
-            .navigationTitle("Volume")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-        .onAppear {
-            // Get initial volume from home view data if available
-            if case .home(let data) = viewModel.currentView {
-                volume = Double(data.volumeLevel) / 100.0
-            }
-        }
     }
 }
 
