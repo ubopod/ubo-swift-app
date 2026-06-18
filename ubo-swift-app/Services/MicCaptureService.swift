@@ -30,13 +30,18 @@ final class MicCaptureService {
 
     private var client: UboClient?
 
+    /// Tags every streamed sample so the core binds the listening session to
+    /// this app's mic and ignores the device's built-in mic. Set at `start`.
+    private var audioSource: String = ""
+
     func configure(client: UboClient) {
         self.client = client
     }
 
-    func start() async throws {
+    func start(audioSource: String = "") async throws {
         guard !isRunning else { return }
         guard let client else { return }
+        self.audioSource = audioSource
 
         try await requestMicPermission()
 
@@ -99,12 +104,14 @@ final class MicCaptureService {
         let data = Data(bytes: int16Channel[0], count: byteCount)
 
         Task { [weak self] in
-            try? await self?.client?.reportAudioSample(
+            guard let self else { return }
+            try? await self.client?.reportAudioSample(
                 timestamp: timestamp,
                 data: data,
                 channels: 1,
                 rate: 16000,
-                width: 2
+                width: 2,
+                audioSource: self.audioSource
             )
         }
     }

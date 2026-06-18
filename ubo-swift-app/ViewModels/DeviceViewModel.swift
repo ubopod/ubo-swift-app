@@ -47,6 +47,20 @@ class DeviceViewModel {
         return new
     }
 
+    /// Stable id identifying this app as a microphone source. Sent on
+    /// `startAssistantListening` and on every streamed sample so the core
+    /// binds the listening session to this app's mic and ignores the
+    /// device's built-in mic (mirrors the Web UI's `web-ui:` audio source).
+    /// Generated once on first launch and persisted.
+    private var audioSourceId: String {
+        if let existing = UserDefaults.standard.string(forKey: "audioSourceId") {
+            return existing
+        }
+        let new = "ios:\(UUID().uuidString)"
+        UserDefaults.standard.set(new, forKey: "audioSourceId")
+        return new
+    }
+
     /// Human-readable label shown in the Pi's camera picker.
     private var cameraSourceLabel: String {
         #if canImport(UIKit)
@@ -229,8 +243,11 @@ class DeviceViewModel {
             micCapture.stop()
             try? await client.stopAssistantListening()
         } else {
-            try? await client.startAssistantListening()
-            try? await micCapture.start()
+            // Same id on the session and every sample, so the core listens to
+            // this app's mic and drops the device's built-in mic.
+            let source = audioSourceId
+            try? await client.startAssistantListening(audioSource: source)
+            try? await micCapture.start(audioSource: source)
         }
     }
 
