@@ -85,6 +85,8 @@ struct WatchDeviceView: View {
                     WatchPromptView(data: data)
                 case .render(let data):
                     WatchRenderView(data: data)
+                case .chat(let data):
+                    WatchChatView(data: data)
                 case .none:
                     loadingView
                 }
@@ -122,6 +124,8 @@ struct WatchDeviceView: View {
             return data.title.isEmpty ? "Prompt" : String(data.title.prefix(10))
         case .render(let data):
             return data.title.isEmpty ? "Render" : String(data.title.prefix(10))
+        case .chat:
+            return "Chat"
         case .none:
             return "Device"
         }

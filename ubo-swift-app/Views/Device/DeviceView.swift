@@ -47,6 +47,8 @@ struct DeviceView: View {
                     PromptDeviceView(data: data)
                 case .render(let data):
                     RenderDeviceView(data: data)
+                case .chat(let data):
+                    ChatDeviceView(data: data)
                 case .none:
                     loadingView
                 }
@@ -133,6 +135,8 @@ struct DeviceView: View {
             return data.title.isEmpty ? "Prompt" : data.title
         case .render(let data):
             return data.title.isEmpty ? "Render" : data.title
+        case .chat:
+            return "Assistant"
         case .none:
             return "Device"
         }
