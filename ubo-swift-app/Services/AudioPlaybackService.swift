@@ -23,6 +23,12 @@ final class AudioPlaybackService {
     private var lastFormat: AVAudioFormat?
     private var sessionConfigured = false
 
+    /// Converts incoming interleaved PCM (int16/float, any rate) into the
+    /// deinterleaved float32 format the engine connection uses. Cached and
+    /// rebuilt only when the wire format changes.
+    private var converter: AVAudioConverter?
+    private var converterSourceFormat: AVAudioFormat?
+
     /// Per-sequence reorder buffers. The gRPC stream usually delivers
     /// chunks in arrival order, but we still gate on `index` to match
     /// the Web UI and tolerate any future reordering.
@@ -63,6 +69,8 @@ final class AudioPlaybackService {
             engine.detach(player)
         }
         lastFormat = nil
+        converter = nil
+        converterSourceFormat = nil
         sequences.removeAll()
     }
 
@@ -118,50 +126,83 @@ final class AudioPlaybackService {
               sample.width > 0,
               !sample.data.isEmpty else { return }
 
-        guard let format = AVAudioFormat(
+        // How the PCM bytes arrive on the wire (interleaved int16 or float).
+        guard let sourceFormat = AVAudioFormat(
             commonFormat: sample.width == 2 ? .pcmFormatInt16 : .pcmFormatFloat32,
             sampleRate: Double(sample.rate),
             channels: AVAudioChannelCount(sample.channels),
             interleaved: true
         ) else { return }
 
-        if format != lastFormat {
+        // The engine connection format: canonical deinterleaved float32.
+        // AVAudioEngine rejects interleaved formats on a node connection with
+        // -10868 (kAudioUnitErr_FormatNotSupported) — which crashed the app.
+        guard let playbackFormat = AVAudioFormat(
+            standardFormatWithSampleRate: Double(sample.rate),
+            channels: AVAudioChannelCount(sample.channels)
+        ) else { return }
+
+        if playbackFormat != lastFormat {
             // Drain queued buffers from the previous format and reconnect.
             player.stop()
             engine.disconnectNodeOutput(player)
-            engine.connect(player, to: engine.mainMixerNode, format: format)
-            lastFormat = format
+            engine.connect(player, to: engine.mainMixerNode, format: playbackFormat)
+            lastFormat = playbackFormat
             do {
                 if !engine.isRunning { try engine.start() }
             } catch {
+                UboLog.audio.error("playback engine.start() failed: \(error.localizedDescription)")
                 return
             }
             player.play()
         } else if !engine.isRunning {
-            do { try engine.start() } catch { return }
+            do { try engine.start() } catch {
+                UboLog.audio.error("playback engine.start() failed: \(error.localizedDescription)")
+                return
+            }
             player.play()
         }
 
+        if converterSourceFormat != sourceFormat {
+            converter = AVAudioConverter(from: sourceFormat, to: playbackFormat)
+            converterSourceFormat = sourceFormat
+        }
+        guard let converter else { return }
+
         player.volume = max(0, min(1, volume == 0 ? 1 : volume))
 
-        let bytesPerFrame = Int(format.streamDescription.pointee.mBytesPerFrame)
-        guard bytesPerFrame > 0 else { return }
-        let frameCount = AVAudioFrameCount(sample.data.count / bytesPerFrame)
+        let srcBytesPerFrame = Int(sourceFormat.streamDescription.pointee.mBytesPerFrame)
+        guard srcBytesPerFrame > 0 else { return }
+        let frameCount = AVAudioFrameCount(sample.data.count / srcBytesPerFrame)
         guard frameCount > 0,
-              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
+              let srcBuffer = AVAudioPCMBuffer(pcmFormat: sourceFormat, frameCapacity: frameCount),
+              let outBuffer = AVAudioPCMBuffer(pcmFormat: playbackFormat, frameCapacity: frameCount) else {
             return
         }
-        buffer.frameLength = frameCount
-
+        srcBuffer.frameLength = frameCount
         sample.data.withUnsafeBytes { raw in
-            if let int16 = buffer.int16ChannelData {
-                memcpy(int16[0], raw.baseAddress, sample.data.count)
-            } else if let float = buffer.floatChannelData {
-                memcpy(float[0], raw.baseAddress, sample.data.count)
+            if let base = srcBuffer.audioBufferList.pointee.mBuffers.mData {
+                memcpy(base, raw.baseAddress, sample.data.count)
             }
         }
 
-        player.scheduleBuffer(buffer, completionHandler: nil)
+        var error: NSError?
+        var consumed = false
+        converter.convert(to: outBuffer, error: &error) { _, outStatus in
+            if consumed {
+                outStatus.pointee = .noDataNow
+                return nil
+            }
+            consumed = true
+            outStatus.pointee = .haveData
+            return srcBuffer
+        }
+        guard error == nil, outBuffer.frameLength > 0 else {
+            if let error { UboLog.audio.error("playback convert failed: \(error.localizedDescription)") }
+            return
+        }
+
+        player.scheduleBuffer(outBuffer, completionHandler: nil)
     }
 
     private func stopPlayback() {
