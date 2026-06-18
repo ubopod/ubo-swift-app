@@ -92,7 +92,12 @@ final class MicCaptureService {
         var consumed = false
         let status = converter.convert(to: outputBuffer, error: &error) { _, outStatus in
             if consumed {
-                outStatus.pointee = .endOfStream
+                // .noDataNow (NOT .endOfStream): the converter is reused across
+                // every tap callback, and .endOfStream permanently finishes a
+                // stateful converter — after the first buffer it would return
+                // .endOfStream with 0 frames forever. .noDataNow means "no more
+                // input for this call" and keeps the converter alive.
+                outStatus.pointee = .noDataNow
                 return nil
             }
             consumed = true

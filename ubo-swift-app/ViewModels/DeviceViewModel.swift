@@ -240,14 +240,26 @@ class DeviceViewModel {
     /// device's assistant pipeline.
     func toggleMicCapture() async {
         if micCapture.isRunning {
+            UboLog.audio.info("toggleMicCapture: stopping")
             micCapture.stop()
-            try? await client.stopAssistantListening()
+            do { try await client.stopAssistantListening() }
+            catch { UboLog.audio.error("stopAssistantListening failed: \(error.localizedDescription)") }
         } else {
             // Same id on the session and every sample, so the core listens to
             // this app's mic and drops the device's built-in mic.
             let source = audioSourceId
-            try? await client.startAssistantListening(audioSource: source)
-            try? await micCapture.start(audioSource: source)
+            UboLog.audio.info("toggleMicCapture: starting (audioSource=\(source))")
+            do {
+                try await client.startAssistantListening(audioSource: source)
+                UboLog.audio.info("startAssistantListening dispatched ok")
+            } catch {
+                UboLog.audio.error("startAssistantListening FAILED: \(error.localizedDescription)")
+            }
+            do {
+                try await micCapture.start(audioSource: source)
+            } catch {
+                UboLog.audio.error("micCapture.start FAILED: \(error.localizedDescription)")
+            }
         }
     }
 
