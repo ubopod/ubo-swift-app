@@ -50,6 +50,7 @@ struct WatchConnectionView: View {
     @Environment(DeviceViewModel.self) private var viewModel
 
     @State private var host: String = ""
+    @State private var portString: String = "50051"
     @State private var useTLS: Bool = false
     @State private var isConnecting = false
 
@@ -65,6 +66,8 @@ struct WatchConnectionView: View {
 
                 TextField("Host", text: $host)
                     .textContentType(.URL)
+
+                TextField("Port", text: $portString)
 
                 Toggle("Use TLS", isOn: $useTLS)
                     .font(.caption)
@@ -83,6 +86,7 @@ struct WatchConnectionView: View {
                 if !viewModel.savedHost.isEmpty {
                     Button("Use Last: \(viewModel.savedHost)") {
                         host = viewModel.savedHost
+                        portString = String(viewModel.savedPort)
                         useTLS = viewModel.savedUseTLS
                         connect()
                     }
@@ -94,14 +98,16 @@ struct WatchConnectionView: View {
         .onAppear {
             if host.isEmpty && !viewModel.savedHost.isEmpty {
                 host = viewModel.savedHost
+                portString = String(viewModel.savedPort)
                 useTLS = viewModel.savedUseTLS
             }
         }
     }
 
     private func connect() {
+        let port = Int(portString) ?? 50051
         Task {
-            try? await viewModel.connect(host: host, useTLS: useTLS)
+            try? await viewModel.connect(host: host, port: port, useTLS: useTLS)
         }
     }
 }
