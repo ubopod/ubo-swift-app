@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import UboSwift
+import GRPCNIOTransportHTTP2
 
 @MainActor
 @Observable
@@ -92,6 +93,11 @@ class DeviceViewModel {
         set { UserDefaults.standard.set(newValue, forKey: "devicePort") }
     }
 
+    var savedUseTLS: Bool {
+        get { UserDefaults.standard.bool(forKey: "deviceUseTLS") }
+        set { UserDefaults.standard.set(newValue, forKey: "deviceUseTLS") }
+    }
+
     var hasSavedConnection: Bool {
         !savedHost.isEmpty
     }
@@ -134,10 +140,16 @@ class DeviceViewModel {
         return nil
     }
 
-    func connect(host: String, port: Int = 50051) async throws {
+    func connect(host: String, port: Int = 50051, useTLS: Bool = false) async throws {
         savedHost = host
         savedPort = port
-        try await client.connect(host: host, port: port, subscribeToDisplay: false)
+        savedUseTLS = useTLS
+        try await client.connect(
+            host: host,
+            port: port,
+            security: useTLS ? .tls(.defaults) : .plaintext,
+            subscribeToDisplay: false
+        )
         client.startViewSubscription()
         client.startStatsSubscription()
         client.startInputsSubscription()
@@ -148,7 +160,7 @@ class DeviceViewModel {
 
     func connectWithSavedSettings() async throws {
         guard !savedHost.isEmpty else { return }
-        try await connect(host: savedHost, port: savedPort)
+        try await connect(host: savedHost, port: savedPort, useTLS: savedUseTLS)
     }
 
     func disconnect() async {
