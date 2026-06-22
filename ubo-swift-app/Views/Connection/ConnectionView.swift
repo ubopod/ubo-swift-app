@@ -13,6 +13,7 @@ struct ConnectionView: View {
 
     @State private var host: String = ""
     @State private var portString: String = "50051"
+    @State private var useTLS: Bool = false
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
     @State private var discovered: [DiscoveredDevice] = []
@@ -67,6 +68,16 @@ struct ConnectionView: View {
                                 .keyboardType(.numberPad)
                                 #endif
                         }
+
+                        Toggle(isOn: $useTLS) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Use TLS (secure)")
+                                    .font(.subheadline.weight(.medium))
+                                Text("Enable when connecting through a secure tunnel or reverse proxy.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                     .padding(.horizontal)
 
@@ -109,6 +120,8 @@ struct ConnectionView: View {
                                 Button {
                                     host = device.host
                                     portString = String(device.port)
+                                    // mDNS-discovered devices are on the LAN → plaintext.
+                                    useTLS = false
                                     connect()
                                 } label: {
                                     HStack {
@@ -150,6 +163,7 @@ struct ConnectionView: View {
                             Button {
                                 host = viewModel.savedHost
                                 portString = String(viewModel.savedPort)
+                                useTLS = viewModel.savedUseTLS
                                 connect()
                             } label: {
                                 HStack {
@@ -194,6 +208,7 @@ struct ConnectionView: View {
                 if host.isEmpty && !viewModel.savedHost.isEmpty {
                     host = viewModel.savedHost
                     portString = String(viewModel.savedPort)
+                    useTLS = viewModel.savedUseTLS
                 }
                 startDiscovery()
             }
@@ -215,7 +230,7 @@ struct ConnectionView: View {
 
         Task {
             do {
-                try await viewModel.connect(host: host, port: port)
+                try await viewModel.connect(host: host, port: port, useTLS: useTLS)
             } catch {
                 errorMessage = error.localizedDescription
                 showError = true
