@@ -68,6 +68,10 @@ struct WatchConnectionView: View {
                     .textContentType(.URL)
 
                 TextField("Port", text: $portString)
+                    .onChange(of: portString) { _, newValue in
+                        let digits = newValue.filter(\.isNumber)
+                        if digits != newValue { portString = digits }
+                    }
 
                 Toggle("Use TLS", isOn: $useTLS)
                     .font(.caption)
