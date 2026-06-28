@@ -80,11 +80,13 @@ struct DeviceSettingsView: View {
 
             VStack(alignment: .leading) {
                 Text("Brightness: \(Int(ledBrightness * 100))%")
+                #if !os(tvOS)
                 Slider(value: $ledBrightness, in: 0...1) { editing in
                     if !editing {
                         Task { try? await viewModel.client.setLEDBrightness(Float(ledBrightness)) }
                     }
                 }
+                #endif
             }
 
             HStack {
@@ -160,6 +162,7 @@ struct DeviceSettingsView: View {
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
+                #if !os(tvOS)
                 Slider(value: $volumeSlider, in: 0...1) { editing in
                     isEditingVolume = editing
                     if !editing {
@@ -167,6 +170,7 @@ struct DeviceSettingsView: View {
                         Task { try? await viewModel.client.setVolume(target) }
                     }
                 }
+                #endif
             }
             .onAppear {
                 if let v = viewModel.cachedPlaybackVolume {

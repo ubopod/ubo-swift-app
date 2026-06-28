@@ -1,6 +1,9 @@
 import AVFoundation
 import SwiftUI
 
+// The viewfinder overlay depends on CameraManager, which exists on iOS + macOS.
+#if os(iOS) || os(macOS)
+
 struct CameraOverlayView: View {
     let cameraManager: CameraManager
     let pattern: String?
@@ -38,7 +41,9 @@ struct CameraOverlayView: View {
                     .padding(.bottom, 32)
             }
         }
+        #if os(iOS)
         .statusBarHidden()
+        #endif
     }
 
     private var topBar: some View {
@@ -115,3 +120,5 @@ struct CameraOverlayView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
+
+#endif

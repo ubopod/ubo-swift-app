@@ -119,6 +119,7 @@ struct RemoteButton: View {
                 .scaleEffect(isPressed ? 0.9 : 1.0)
         }
         .buttonStyle(.plain)
+        #if !os(tvOS)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
@@ -132,6 +133,7 @@ struct RemoteButton: View {
                     }
                 }
         )
+        #endif
     }
 
     private var buttonSize: CGFloat {
@@ -168,6 +170,7 @@ struct SideButton: View {
                 .scaleEffect(isPressed ? 0.9 : 1.0)
         }
         .buttonStyle(.plain)
+        #if !os(tvOS)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
@@ -181,6 +184,7 @@ struct SideButton: View {
                     }
                 }
         )
+        #endif
     }
 
     private func triggerHaptic() {

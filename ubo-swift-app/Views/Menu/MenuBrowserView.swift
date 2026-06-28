@@ -97,25 +97,33 @@ struct MenuBrowserView: View {
                 // Extra information (paired with the optional "read aloud"
                 // accent button when the device sent an `extra_info` item).
                 if !notification.extraInformation.isEmpty {
-                    GroupBox {
-                        HStack(alignment: .top, spacing: 8) {
-                            markupText(notification.extraInformation)
-                                .font(.caption)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            if let action = partitioned.extraInfo {
-                                Button {
-                                    Task {
-                                        try? await viewModel.client.selectMenuItem(label: action.label)
-                                    }
-                                } label: {
-                                    Image(systemName: "speaker.wave.2.circle.fill")
-                                        .font(.title3)
+                    let extraInfoRow = HStack(alignment: .top, spacing: 8) {
+                        markupText(notification.extraInformation)
+                            .font(.caption)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if let action = partitioned.extraInfo {
+                            Button {
+                                Task {
+                                    try? await viewModel.client.selectMenuItem(label: action.label)
                                 }
-                                .buttonStyle(.borderless)
+                            } label: {
+                                Image(systemName: "speaker.wave.2.circle.fill")
+                                    .font(.title3)
                             }
+                            .buttonStyle(.borderless)
                         }
                     }
+                    #if os(tvOS)
+                    extraInfoRow
+                        .padding()
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .padding(.horizontal)
+                    #else
+                    GroupBox {
+                        extraInfoRow
+                    }
                     .padding(.horizontal)
+                    #endif
                 }
 
                 // Action buttons (dismiss / extra_info already filtered out).

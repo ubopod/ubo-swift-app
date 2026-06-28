@@ -88,6 +88,7 @@ struct DeviceView: View {
                     }
                 }
 
+                #if os(iOS) || os(macOS)
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         triggerHaptic()
@@ -98,6 +99,7 @@ struct DeviceView: View {
                     }
                     .accessibilityLabel(viewModel.micCapture.isRunning ? "Stop microphone" : "Start microphone")
                 }
+                #endif
             }
             .sheet(item: Binding<WebUIInputDescription?>(
                 get: {
@@ -266,11 +268,13 @@ struct HomeMenuCard: View {
             .scaleEffect(isPressed ? 0.98 : 1.0)
         }
         .buttonStyle(.plain)
+        #if !os(tvOS)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in withAnimation(.easeInOut(duration: 0.1)) { isPressed = true } }
                 .onEnded { _ in withAnimation(.easeInOut(duration: 0.1)) { isPressed = false } }
         )
+        #endif
     }
 
     private func mapIcon(_ icon: String) -> String {
@@ -394,27 +398,35 @@ struct NotificationDeviceView: View {
                 // Extra information (paired with the optional `extra_info`
                 // accent button if one was sent).
                 if !data.extraInformation.isEmpty {
-                    GroupBox {
-                        HStack(alignment: .top, spacing: 8) {
-                            markupText(data.extraInformation)
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            if let action = partitioned.extraInfo {
-                                Button {
-                                    triggerHaptic()
-                                    Task {
-                                        try? await viewModel.client.selectMenuItem(label: action.label)
-                                    }
-                                } label: {
-                                    Image(systemName: "speaker.wave.2.circle.fill")
-                                        .font(.title2)
+                    let extraInfoRow = HStack(alignment: .top, spacing: 8) {
+                        markupText(data.extraInformation)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if let action = partitioned.extraInfo {
+                            Button {
+                                triggerHaptic()
+                                Task {
+                                    try? await viewModel.client.selectMenuItem(label: action.label)
                                 }
-                                .buttonStyle(.borderless)
+                            } label: {
+                                Image(systemName: "speaker.wave.2.circle.fill")
+                                    .font(.title2)
                             }
+                            .buttonStyle(.borderless)
                         }
                     }
+                    #if os(tvOS)
+                    extraInfoRow
+                        .padding()
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .padding(.horizontal)
+                    #else
+                    GroupBox {
+                        extraInfoRow
+                    }
                     .padding(.horizontal)
+                    #endif
                 }
 
                 // Action buttons (dismiss / extra_info already filtered out).
@@ -545,11 +557,13 @@ struct ControlButton: View {
             .scaleEffect(isPressed ? 0.9 : 1.0)
         }
         .buttonStyle(.plain)
+        #if !os(tvOS)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in withAnimation(.easeInOut(duration: 0.1)) { isPressed = true } }
                 .onEnded { _ in withAnimation(.easeInOut(duration: 0.1)) { isPressed = false } }
         )
+        #endif
     }
 
     private func triggerHaptic() {

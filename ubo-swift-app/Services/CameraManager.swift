@@ -2,6 +2,9 @@ import AVFoundation
 import Foundation
 import UboSwift
 
+// Camera capture exists only on iOS + macOS; tvOS/visionOS have no viewfinder.
+#if os(iOS) || os(macOS)
+
 @MainActor
 @Observable
 final class CameraManager: CameraCaptureDelegate {
@@ -119,3 +122,5 @@ final class CameraManager: CameraCaptureDelegate {
         }
     }
 }
+
+#endif

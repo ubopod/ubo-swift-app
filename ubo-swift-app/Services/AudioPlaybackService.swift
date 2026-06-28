@@ -9,7 +9,7 @@
 //  Mirrors the contract the Web UI implements in `audio.ts`.
 //
 
-#if os(iOS)
+#if os(iOS) || os(macOS)
 import Foundation
 import AVFAudio
 import AVFoundation
@@ -21,7 +21,9 @@ final class AudioPlaybackService {
     private let player = AVAudioPlayerNode()
     private var subscriptionTask: Task<Void, Never>?
     private var lastFormat: AVAudioFormat?
+    #if os(iOS)
     private var sessionConfigured = false
+    #endif
 
     /// Converts incoming interleaved PCM (int16/float, any rate) into the
     /// deinterleaved float32 format the engine connection uses. Cached and
@@ -215,6 +217,9 @@ final class AudioPlaybackService {
     }
 
     private func configureSessionIfNeeded() {
+        #if os(iOS)
+        // macOS has no AVAudioSession; AVAudioEngine plays through the default
+        // output device without any session category setup.
         guard !sessionConfigured else { return }
         do {
             try AVAudioSession.sharedInstance().setCategory(
@@ -228,6 +233,7 @@ final class AudioPlaybackService {
             // Audio session may stay un-activated on backgrounded launch;
             // the next start() call will retry.
         }
+        #endif
     }
 }
 #endif
