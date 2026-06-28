@@ -48,7 +48,9 @@ struct ConnectionView: View {
                                 .foregroundStyle(.secondary)
 
                             TextField("e.g. ubo.local or 192.168.1.100", text: $host)
+                                #if !os(tvOS)
                                 .textFieldStyle(.roundedBorder)
+                                #endif
                                 .textContentType(.URL)
                                 .autocorrectionDisabled()
                                 #if os(iOS)
@@ -63,7 +65,9 @@ struct ConnectionView: View {
                                 .foregroundStyle(.secondary)
 
                             TextField("50051", text: $portString)
+                                #if !os(tvOS)
                                 .textFieldStyle(.roundedBorder)
+                                #endif
                                 #if os(iOS)
                                 .keyboardType(.numberPad)
                                 #endif

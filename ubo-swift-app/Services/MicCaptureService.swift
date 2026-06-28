@@ -7,7 +7,7 @@
 //  `reportAudioSample` flow at the assistant pipeline's expected rate.
 //
 
-#if os(iOS)
+#if os(iOS) || os(macOS)
 import Foundation
 import AVFAudio
 import AVFoundation
@@ -53,9 +53,12 @@ final class MicCaptureService {
         try await requestMicPermission()
         UboLog.audio.info("mic permission granted")
 
+        #if os(iOS)
+        // macOS has no AVAudioSession; AVAudioEngine drives the input node directly.
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
         try session.setActive(true)
+        #endif
 
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
@@ -89,7 +92,9 @@ final class MicCaptureService {
         guard isRunning else { return }
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
+        #if os(iOS)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
         isRunning = false
     }
 
@@ -161,11 +166,17 @@ final class MicCaptureService {
     }
 
     private func requestMicPermission() async throws {
+        #if os(iOS)
         let granted = await withCheckedContinuation { (cont: CheckedContinuation<Bool, Never>) in
             AVAudioApplication.requestRecordPermission { allowed in
                 cont.resume(returning: allowed)
             }
         }
+        #else
+        // macOS: AVAudioApplication is unavailable; gate capture on the
+        // sandbox's audio-input device permission instead.
+        let granted = await AVCaptureDevice.requestAccess(for: .audio)
+        #endif
         guard granted else {
             throw NSError(
                 domain: "MicCaptureService",

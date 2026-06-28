@@ -164,6 +164,9 @@ private struct InputFieldEditor: View {
                     set: { value = $0 ? "true" : "false" }
                 ))
             case .color:
+                #if os(tvOS)
+                TextField(field.label, text: $value)
+                #else
                 ColorPicker(field.label, selection: Binding(
                     get: { Color(hex: value) ?? .accentColor },
                     set: { newColor in
@@ -172,6 +175,7 @@ private struct InputFieldEditor: View {
                         }
                     }
                 ))
+                #endif
             case .select:
                 Picker(field.label, selection: $value) {
                     ForEach(field.options, id: \.self) { option in
@@ -182,6 +186,9 @@ private struct InputFieldEditor: View {
             case .file:
                 FilePickerButton(field: field, value: $value)
             case .date:
+                #if os(tvOS)
+                TextField(field.label, text: $value)
+                #else
                 DatePicker(
                     field.label,
                     selection: Binding(
@@ -190,7 +197,11 @@ private struct InputFieldEditor: View {
                     ),
                     displayedComponents: .date
                 )
+                #endif
             case .time:
+                #if os(tvOS)
+                TextField(field.label, text: $value)
+                #else
                 DatePicker(
                     field.label,
                     selection: Binding(
@@ -199,6 +210,7 @@ private struct InputFieldEditor: View {
                     ),
                     displayedComponents: .hourAndMinute
                 )
+                #endif
             }
 
             if let error {

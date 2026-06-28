@@ -1,6 +1,9 @@
 import AVFoundation
 import Foundation
 
+// Camera capture (AVCaptureSession video) exists only on iOS + macOS.
+#if os(iOS) || os(macOS)
+
 enum CameraError: Error, LocalizedError {
     case noCameraAvailable
     case inputCreationFailed
@@ -109,8 +112,17 @@ final class CameraCaptureService: NSObject {
     /// simulator / iPad-without-back-camera this is the difference between
     /// "blank black screen" and "front camera renders".
     private func resolveCamera(for position: AVCaptureDevice.Position) -> AVCaptureDevice? {
+        // The multi-lens device types are iPhone-only; macOS exposes just the
+        // wide-angle (built-in or external) camera.
+        #if os(iOS)
+        let deviceTypes: [AVCaptureDevice.DeviceType] = [
+            .builtInWideAngleCamera, .builtInDualCamera, .builtInTripleCamera,
+        ]
+        #else
+        let deviceTypes: [AVCaptureDevice.DeviceType] = [.builtInWideAngleCamera]
+        #endif
         let discovery = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.builtInWideAngleCamera, .builtInDualCamera, .builtInTripleCamera],
+            deviceTypes: deviceTypes,
             mediaType: .video,
             position: position
         )
@@ -233,3 +245,5 @@ extension CameraCaptureService: AVCaptureVideoDataOutputSampleBufferDelegate {
         )
     }
 }
+
+#endif

@@ -17,6 +17,16 @@ struct RenderDeviceView: View {
     let data: RenderViewData
     @Environment(DeviceViewModel.self) private var viewModel
 
+    /// `.bottomBar` exists only on iOS; macOS/tvOS fall back to the default
+    /// toolbar slot. (The shared shell replaces this UI on those platforms.)
+    private var actionToolbarPlacement: ToolbarItemPlacement {
+        #if os(iOS)
+        .bottomBar
+        #else
+        .automatic
+        #endif
+    }
+
     var body: some View {
         Group {
             switch data.kind {
@@ -38,7 +48,7 @@ struct RenderDeviceView: View {
         }
         .toolbar {
             if !data.items.isEmpty {
-                ToolbarItem(placement: .bottomBar) {
+                ToolbarItem(placement: actionToolbarPlacement) {
                     HStack(spacing: 12) {
                         ForEach(data.items, id: \.key) { item in
                             Button(item.label.isEmpty ? item.key : item.label) {
@@ -176,7 +186,9 @@ struct TextViewerRenderView: View {
                 }
                 markupText(text)
                     .font(.body.monospaced())
+                    #if !os(tvOS)
                     .textSelection(.enabled)
+                    #endif
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding()
@@ -205,13 +217,13 @@ struct ImageViewerRenderView: View {
             }
             if let bytes = imageData,
                let uiImage = PlatformImage(data: bytes) {
-                #if os(iOS)
-                Image(uiImage: uiImage)
+                #if os(macOS)
+                Image(nsImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(maxWidth: .infinity)
                 #else
-                Image(nsImage: uiImage)
+                Image(uiImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(maxWidth: .infinity)
@@ -289,13 +301,13 @@ struct FrameStreamRenderView: View {
                     .fill(Color.black)
                     .aspectRatio(1, contentMode: .fit)
                 if let image = currentImage {
-                    #if os(iOS)
-                    Image(uiImage: image)
+                    #if os(macOS)
+                    Image(nsImage: image)
                         .resizable()
                         .interpolation(.none)
                         .aspectRatio(contentMode: .fit)
                     #else
-                    Image(nsImage: image)
+                    Image(uiImage: image)
                         .resizable()
                         .interpolation(.none)
                         .aspectRatio(contentMode: .fit)

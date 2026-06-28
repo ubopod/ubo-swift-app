@@ -124,6 +124,7 @@ struct ActionButton: View {
             .scaleEffect(isPressed ? 0.95 : 1.0)
         }
         .buttonStyle(.plain)
+        #if !os(tvOS)
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
@@ -137,6 +138,7 @@ struct ActionButton: View {
                     }
                 }
         )
+        #endif
     }
 
     private func triggerHaptic() {

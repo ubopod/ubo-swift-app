@@ -1,6 +1,8 @@
 import SwiftUI
 import Combine
+#if canImport(WidgetKit)
 import WidgetKit
+#endif
 import UboSwift
 import GRPCNIOTransportHTTP2
 #if canImport(UIKit)
@@ -11,9 +13,18 @@ import UIKit
 @Observable
 class DeviceViewModel {
     let client = UboClient()
+    // Local capture (camera viewfinder, mic streaming, device-audio playback)
+    // exists only on the platforms with the hardware + capture APIs. tvOS has
+    // no camera/mic and routes the assistant to the Pi's own mics instead.
+    #if os(iOS) || os(macOS)
     let cameraManager = CameraManager()
     let micCapture = MicCaptureService()
     let audioPlayback = AudioPlaybackService()
+    #endif
+
+    /// Whether an assistant listening session this client controls is live.
+    /// Backs the mic icon — a stored property so `@Observable` re-renders it.
+    private(set) var assistantListening = false
 
     // Observable state - updated from client
     private(set) var isConnecting: Bool = false
@@ -22,6 +33,7 @@ class DeviceViewModel {
     private(set) var statusBar: StatusBarData?
     private(set) var lastError: UboError?
     private(set) var activeInputs: [WebUIInputDescription] = []
+    private(set) var stack: [UboStackItem] = []
 
     // System stats - continuously updated from stats subscription
     private(set) var cachedCpuPercent: Float = 0
@@ -32,9 +44,12 @@ class DeviceViewModel {
     private(set) var cachedIsCaptureMute: Bool?
 
     private var cancellables = Set<AnyCancellable>()
+    #if os(iOS) || os(macOS)
     private var cameraObservationTask: Task<Void, Never>?
     private var cameraDetectAdvertiseCancellable: AnyCancellable?
+    #endif
 
+    #if os(iOS) || os(macOS)
     /// Stable id under which this iPhone advertises itself as a camera
     /// source to the Pi. Generated once on first launch and persisted; the
     /// Pi uses it to route `CameraStartViewfinderEvent`s and to drop
@@ -71,6 +86,7 @@ class DeviceViewModel {
         return "iPhone"
         #endif
     }
+    #endif
 
     init() {
         // Observe client's published properties
@@ -111,6 +127,13 @@ class DeviceViewModel {
             }
             .store(in: &cancellables)
 
+        client.$stack
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] stack in
+                self?.stack = stack
+            }
+            .store(in: &cancellables)
+
         // Subscribe to system stats for continuous CPU/RAM/temperature updates
         client.$systemStats
             .receive(on: DispatchQueue.main)
@@ -148,7 +171,9 @@ class DeviceViewModel {
         print("[Widget] Saved stats: CPU=\(cachedCpuPercent)%, RAM=\(cachedRamPercent)%, Connected=\(isConnected)")
 
         // Reload widget timelines
+        #if canImport(WidgetKit)
         WidgetCenter.shared.reloadAllTimelines()
+        #endif
     }
 
     // Persisted settings
@@ -219,17 +244,20 @@ class DeviceViewModel {
             security: useTLS ? .tls(.defaults) : .plaintext,
             subscribeToDisplay: false
         )
-        client.cameraSourceId = cameraSourceId
         client.startViewSubscription()
         client.startStatsSubscription()
-        client.startCameraSubscription()
         client.startInputsSubscription()
+        client.startStackSubscription()
+        #if os(iOS) || os(macOS)
+        client.cameraSourceId = cameraSourceId
+        client.startCameraSubscription()
         cameraManager.configure(client: client)
         startCameraObservation()
         startCameraRegistrationListener()
         micCapture.configure(client: client)
         audioPlayback.configure(client: client)
         audioPlayback.start()
+        #endif
     }
 
     func connectWithSavedSettings() async throws {
@@ -238,6 +266,7 @@ class DeviceViewModel {
     }
 
     func disconnect() async {
+        #if os(iOS) || os(macOS)
         cameraObservationTask?.cancel()
         cameraObservationTask = nil
         cameraDetectAdvertiseCancellable?.cancel()
@@ -245,17 +274,49 @@ class DeviceViewModel {
         cameraManager.stopCamera()
         micCapture.stop()
         audioPlayback.stop()
+        #endif
         await client.disconnect()
     }
 
+    /// Whether an assistant listening session this client controls is active.
+    /// On iOS/macOS that means this client's mic is streaming; on tvOS it
+    /// means the Pi's own mics are listening on this client's behalf.
+    var isAssistantListening: Bool { assistantListening }
+
+    /// Unified mic toggle used by the shared TV/desktop shell. iOS/macOS
+    /// stream the local mic; tvOS dispatches a device-routed session with an
+    /// empty `audio_source`, so the Pi's built-in mics do the listening.
+    func toggleAssistantListening() async {
+        #if os(iOS) || os(macOS)
+        await toggleMicCapture()
+        #else
+        if assistantListening {
+            UboLog.audio.info("toggleAssistantListening: stopping device session")
+            do { try await client.stopAssistantListening() }
+            catch { UboLog.audio.error("stopAssistantListening failed: \(error.localizedDescription)") }
+            assistantListening = false
+        } else {
+            UboLog.audio.info("toggleAssistantListening: starting device session (audioSource=<system>)")
+            do {
+                try await client.startAssistantListening(audioSource: "")
+                assistantListening = true
+            } catch {
+                UboLog.audio.error("startAssistantListening failed: \(error.localizedDescription)")
+            }
+        }
+        #endif
+    }
+
+    #if os(iOS) || os(macOS)
     /// Toggle "press to talk" mic capture. Streams PCM16 frames to the
     /// device's assistant pipeline.
     func toggleMicCapture() async {
-        if micCapture.isRunning {
+        if assistantListening {
             UboLog.audio.info("toggleMicCapture: stopping")
             micCapture.stop()
             do { try await client.stopAssistantListening() }
             catch { UboLog.audio.error("stopAssistantListening failed: \(error.localizedDescription)") }
+            assistantListening = false
         } else {
             // Same id on the session and every sample, so the core listens to
             // this app's mic and drops the device's built-in mic.
@@ -264,8 +325,10 @@ class DeviceViewModel {
             do {
                 try await client.startAssistantListening(audioSource: source)
                 UboLog.audio.info("startAssistantListening dispatched ok")
+                assistantListening = true
             } catch {
                 UboLog.audio.error("startAssistantListening FAILED: \(error.localizedDescription)")
+                return
             }
             do {
                 try await micCapture.start(audioSource: source)
@@ -314,4 +377,5 @@ class DeviceViewModel {
             }
         }
     }
+    #endif
 }

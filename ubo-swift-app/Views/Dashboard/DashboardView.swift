@@ -106,6 +106,16 @@ struct GaugeCard: View {
 
     var body: some View {
         VStack(spacing: 8) {
+            #if os(tvOS)
+            ProgressView(value: value) {
+                Image(systemName: icon)
+                    .font(.caption)
+            } currentValueLabel: {
+                Text("\(Int(value * 100))%")
+                    .font(.caption2)
+            }
+            .tint(color)
+            #else
             Gauge(value: value) {
                 Image(systemName: icon)
                     .font(.caption)
@@ -115,6 +125,7 @@ struct GaugeCard: View {
             }
             .gaugeStyle(.accessoryCircular)
             .tint(color)
+            #endif
 
             Text(title)
                 .font(.caption)
@@ -136,6 +147,21 @@ struct TemperatureCard: View {
     var body: some View {
         VStack(spacing: 8) {
             // Normalize temperature to 0-1 range (assuming 0-100°C range)
+            #if os(tvOS)
+            ProgressView(value: Double(temperature ?? 0) / 100.0) {
+                Image(systemName: "thermometer")
+                    .font(.caption)
+            } currentValueLabel: {
+                if let temp = temperature {
+                    Text(String(format: "%.0f°", temp))
+                        .font(.caption2)
+                } else {
+                    Text("--")
+                        .font(.caption2)
+                }
+            }
+            .tint(color)
+            #else
             Gauge(value: Double(temperature ?? 0) / 100.0) {
                 Image(systemName: "thermometer")
                     .font(.caption)
@@ -150,6 +176,7 @@ struct TemperatureCard: View {
             }
             .gaugeStyle(.accessoryCircular)
             .tint(color)
+            #endif
 
             Text("Temp")
                 .font(.caption)
