@@ -1,13 +1,13 @@
 import SwiftUI
 
-extension Int {
+public extension Int {
     /// Returns the value if non-zero, otherwise nil
     var nonZero: Int? {
         self == 0 ? nil : self
     }
 }
 
-extension Color {
+public extension Color {
     /// Initialize a Color from a hex string (e.g., "#ffffff" or "ffffff")
     init?(hex: String) {
         var hexString = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -28,7 +28,7 @@ extension Color {
     }
 }
 
-extension View {
+public extension View {
     /// Apply a modifier conditionally
     @ViewBuilder
     func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
@@ -39,3 +39,15 @@ extension View {
         }
     }
 }
+
+#if os(iOS)
+import UIKit
+
+public extension View {
+    /// Trigger haptic feedback
+    func hapticFeedback(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.impactOccurred()
+    }
+}
+#endif

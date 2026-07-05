@@ -7,6 +7,7 @@
 //  register via CoreText if needed.
 //
 
+import UboAppKit
 import Foundation
 import CoreText
 import SwiftUI

@@ -7,6 +7,7 @@
 //  users have parity context across clients.
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 

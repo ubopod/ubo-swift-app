@@ -10,6 +10,7 @@
 //  registers the TTF via CoreText if iOS hasn't done so already.
 //
 
+import UboAppKit
 import Foundation
 import CoreText
 #if os(iOS)

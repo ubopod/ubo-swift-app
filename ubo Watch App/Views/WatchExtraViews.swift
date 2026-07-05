@@ -6,6 +6,7 @@
 //  trimmed for the smaller screen.
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 
@@ -174,7 +175,7 @@ private struct WatchStatusView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: WatchSymbolMapper.systemName(for: icon))
+            Image(systemName: UboSymbolMapper.systemName(for: icon))
                 .font(.title3)
                 .foregroundStyle(Color.accentColor)
             if !title.isEmpty {
@@ -245,7 +246,7 @@ struct WatchInstructionView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 8) {
-                Image(systemName: WatchSymbolMapper.systemName(for: data.icon))
+                Image(systemName: UboSymbolMapper.systemName(for: data.icon))
                     .font(.title2)
                     .foregroundStyle(Color.accentColor)
                 if !data.title.isEmpty {
@@ -301,7 +302,7 @@ struct WatchPromptView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 8) {
-                Image(systemName: WatchSymbolMapper.systemName(for: data.icon))
+                Image(systemName: UboSymbolMapper.systemName(for: data.icon))
                     .font(.title3)
                     .foregroundStyle(Color.accentColor)
                 if !data.title.isEmpty {
@@ -363,18 +364,3 @@ enum WatchRGBDecoder {
     }
 }
 
-enum WatchSymbolMapper {
-    static func systemName(for icon: String) -> String {
-        switch icon.lowercased() {
-        case "info", "󰋼": return "info.circle"
-        case "warning", "alert", "󰀦": return "exclamationmark.triangle"
-        case "error", "fail", "failure": return "xmark.circle"
-        case "success", "ok", "check", "checkmark", "󰄬": return "checkmark.circle"
-        case "wifi", "󰖩": return "wifi"
-        case "ssh", "󰣀": return "terminal"
-        case "settings", "gear", "󰒓": return "gear"
-        case "power", "󰐥": return "power"
-        default: return "circle"
-        }
-    }
-}

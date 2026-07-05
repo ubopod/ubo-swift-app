@@ -1,3 +1,16 @@
+//
+//  CameraManager.swift
+//
+//  Main-actor camera coordinator: reacts to the Pi's viewfinder events,
+//  coalesces frames from the capture service, and paces frame dispatch to
+//  the core.
+//
+//  Threading contract: `frameLock` guards `pendingFrame`, the single
+//  hand-off point between the nonisolated capture delegate (processing
+//  queue) and the main-actor dispatch loop. `pendingFrame` must never be
+//  touched without holding `frameLock`; all other state is main-actor.
+//
+
 import AVFoundation
 import Foundation
 import UboSwift
@@ -7,26 +20,28 @@ import UboSwift
 
 @MainActor
 @Observable
-final class CameraManager: CameraCaptureDelegate {
-    private(set) var isActive = false
-    private(set) var lastError: CameraError?
-    private(set) var position: AVCaptureDevice.Position = .back
+public final class CameraManager: CameraCaptureDelegate {
+    public private(set) var isActive = false
+    public private(set) var lastError: CameraError?
+    public private(set) var position: AVCaptureDevice.Position = .back
 
     private let captureService = CameraCaptureService()
     private var client: UboClient?
 
     // Frame coalescing: latest frame protected by NSLock, accessed from nonisolated delegate
-    private nonisolated(unsafe) let frameLock = NSLock()
+    private let frameLock = NSLock()
     private nonisolated(unsafe) var pendingFrame: (data: Data, width: Int, height: Int, timestamp: Float)?
     private var dispatchTask: Task<Void, Never>?
 
-    var captureSession: AVCaptureSession { captureService.session }
+    public var captureSession: AVCaptureSession { captureService.session }
 
-    func configure(client: UboClient) {
+    public init() {}
+
+    public func configure(client: UboClient) {
         self.client = client
     }
 
-    func startCamera() {
+    public func startCamera() {
         guard !isActive else { return }
         isActive = true
         lastError = nil
@@ -45,7 +60,7 @@ final class CameraManager: CameraCaptureDelegate {
         }
     }
 
-    func stopCamera() {
+    public func stopCamera() {
         guard isActive else { return }
         captureService.stop()
         captureService.delegate = nil
@@ -58,7 +73,7 @@ final class CameraManager: CameraCaptureDelegate {
     }
 
     /// Flip between front and rear cameras while the session keeps running.
-    func switchPosition() {
+    public func switchPosition() {
         let newPosition: AVCaptureDevice.Position = (position == .back) ? .front : .back
         position = newPosition
         lastError = nil
@@ -67,7 +82,7 @@ final class CameraManager: CameraCaptureDelegate {
 
     // MARK: - CameraCaptureDelegate
 
-    nonisolated func cameraCaptureService(
+    public nonisolated func cameraCaptureService(
         _ service: CameraCaptureService,
         didOutputRGBData data: Data,
         width: Int,
@@ -79,7 +94,7 @@ final class CameraManager: CameraCaptureDelegate {
         frameLock.unlock()
     }
 
-    nonisolated func cameraCaptureService(
+    public nonisolated func cameraCaptureService(
         _ service: CameraCaptureService,
         didFailWithError error: CameraError
     ) {
@@ -95,6 +110,15 @@ final class CameraManager: CameraCaptureDelegate {
 
     // MARK: - Dispatch Loop
 
+    /// Take (and clear) the latest coalesced frame. Safe from any context.
+    private nonisolated func takePendingFrame() -> (data: Data, width: Int, height: Int, timestamp: Float)? {
+        frameLock.lock()
+        defer { frameLock.unlock() }
+        let frame = pendingFrame
+        pendingFrame = nil
+        return frame
+    }
+
     private func startDispatchLoop() {
         dispatchTask?.cancel()
         dispatchTask = Task { [weak self] in
@@ -102,22 +126,23 @@ final class CameraManager: CameraCaptureDelegate {
                 guard let self else { return }
 
                 // Pick up the latest frame
-                frameLock.lock()
-                let frame = pendingFrame
-                pendingFrame = nil
-                frameLock.unlock()
+                let frame = self.takePendingFrame()
 
                 if let frame, let client {
-                    try? await client.sendCameraFrame(
-                        data: frame.data,
-                        width: frame.width,
-                        height: frame.height,
-                        timestamp: frame.timestamp
-                    )
+                    do {
+                        try await client.sendCameraFrame(
+                            data: frame.data,
+                            width: frame.width,
+                            height: frame.height,
+                            timestamp: frame.timestamp
+                        )
+                    } catch {
+                        UboLog.camera.error("sendCameraFrame failed: \(error.localizedDescription)")
+                    }
                 }
 
                 // Pace the dispatch loop (~12 FPS)
-                try? await Task.sleep(nanoseconds: 83_000_000)
+                try? await Task.sleep(nanoseconds: UInt64(UboConstants.cameraFrameInterval * 1_000_000_000))
             }
         }
     }

@@ -11,6 +11,7 @@
 //  in which case we fall back to an SF Symbol via `SymbolMapper`.
 //
 
+import UboAppKit
 import SwiftUI
 
 /// Name the bundled Nerd Font is registered as via
@@ -76,7 +77,7 @@ public struct IconView: View {
                 .font(.custom(UboIconFont.family, size: size))
                 .foregroundStyle(color)
         } else if !icon.isEmpty {
-            Image(systemName: SymbolMapper.systemName(for: icon))
+            Image(systemName: UboSymbolMapper.systemName(for: icon))
                 .font(.system(size: size))
                 .foregroundStyle(color)
         } else {

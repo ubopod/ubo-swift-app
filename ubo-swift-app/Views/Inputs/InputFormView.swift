@@ -8,6 +8,7 @@
 //  `InputProvideAction`, on cancel it dispatches `InputCancelAction`.
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 #if os(iOS)

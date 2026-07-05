@@ -8,6 +8,7 @@
 //  per-instruction timeout.
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 
@@ -20,7 +21,7 @@ struct InstructionDeviceView: View {
         VStack(spacing: 24) {
             Spacer(minLength: 0)
 
-            Image(systemName: SymbolMapper.systemName(for: data.icon))
+            Image(systemName: UboSymbolMapper.systemName(for: data.icon))
                 .font(.system(size: 56))
                 .foregroundStyle(Color.accentColor)
 

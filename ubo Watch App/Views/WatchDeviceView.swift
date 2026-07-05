@@ -5,6 +5,7 @@
 //  Native watchOS interface for the Ubo Pod
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 
@@ -196,36 +197,10 @@ struct WatchHomeView: View {
 
     private func displayIcon(for item: MenuItemData) -> String {
         let iconSource = item.icon.isEmpty ? item.key : item.icon
-        return mapIcon(iconSource)
+        return UboSymbolMapper.systemName(for: iconSource)
     }
 
-    private func mapIcon(_ icon: String) -> String {
-        switch icon.lowercased() {
-        // Key-based mappings
-        case "main": return "list.bullet"
-        case "notifications": return "bell"
-        case "power": return "power"
-        // Icon-based mappings
-        case "settings", "gear", "󰒓": return "gear"
-        case "wifi", "󰖩": return "wifi"
-        case "bluetooth", "󰂯": return "bluetooth"
-        case "apps", "󰀻": return "square.grid.2x2"
-        case "󰐥": return "power"
-        case "info", "󰋼": return "info.circle"
-        case "update", "󰚰": return "arrow.down.circle"
-        case "docker", "󰡨": return "shippingbox"
-        case "home", "󰋜": return "house"
-        case "lightbulb", "󰌵": return "lightbulb"
-        case "camera", "󰄀": return "camera"
-        case "microphone", "󰍬": return "mic"
-        case "speaker", "󰓃": return "speaker.wave.2"
-        case "network", "󰛳": return "network"
-        case "ssh", "󰣀": return "terminal"
-        case "vpn", "󰖂": return "lock.shield"
-        case "bell", "󰂞": return "bell"
-        default: return "circle.fill"
-        }
-    }
+    
 }
 
 // MARK: - Menu View
@@ -296,26 +271,7 @@ struct WatchMenuItemRow: View {
         }
     }
 
-    private func mapIcon(_ icon: String) -> String {
-        switch icon.lowercased() {
-        case "settings", "gear", "󰒓": return "gear"
-        case "wifi", "󰖩": return "wifi"
-        case "bluetooth", "󰂯": return "bluetooth"
-        case "apps", "󰀻": return "square.grid.2x2"
-        case "power", "󰐥": return "power"
-        case "info", "󰋼": return "info.circle"
-        case "update", "󰚰": return "arrow.down.circle"
-        case "docker", "󰡨": return "shippingbox"
-        case "home", "󰋜": return "house"
-        case "check", "checkmark", "󰄬": return "checkmark"
-        case "cancel", "close", "󰅖": return "xmark"
-        case "back", "󰁍": return "chevron.left"
-        case "forward", "󰁔": return "chevron.right"
-        case "toggle_on", "󰔡": return "checkmark.circle.fill"
-        case "toggle_off", "󰨙": return "circle"
-        default: return "circle.fill"
-        }
-    }
+    
 }
 
 // MARK: - Notification View

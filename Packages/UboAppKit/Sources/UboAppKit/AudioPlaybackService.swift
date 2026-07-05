@@ -1,29 +1,29 @@
 //
 //  AudioPlaybackService.swift
-//  ubo-swift-app
 //
 //  Routes the device's playback event stream — one-shot samples
 //  (chimes, alerts), indexed sequence chunks (TTS / file playback),
 //  and stop signals — through `AVAudioEngine` so the user hears the
-//  same audio on the iPhone speaker as the Pi would play locally.
-//  Mirrors the contract the Web UI implements in `audio.ts`.
+//  same audio on this device's speaker as the Pi would play locally.
+//  Mirrors the contract the Web UI implements in `audio.ts`. Shared by
+//  the iOS/macOS and watchOS targets.
 //
 
-#if os(iOS) || os(macOS)
+#if os(iOS) || os(macOS) || os(watchOS)
 import Foundation
 import AVFAudio
 import AVFoundation
 import UboSwift
 
 @MainActor
-final class AudioPlaybackService {
+public final class AudioPlaybackService {
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
     private var subscriptionTask: Task<Void, Never>?
+    /// Bumped on every start()/stop() so a finished subscription only clears
+    /// `subscriptionTask` if it is still the current one.
+    private var subscriptionGeneration = 0
     private var lastFormat: AVAudioFormat?
-    #if os(iOS)
-    private var sessionConfigured = false
-    #endif
 
     /// Converts incoming interleaved PCM (int16/float, any rate) into the
     /// deinterleaved float32 format the engine connection uses. Cached and
@@ -38,18 +38,35 @@ final class AudioPlaybackService {
 
     private var client: UboClient?
 
-    func configure(client: UboClient) {
+    public init() {}
+
+    public func configure(client: UboClient) {
         self.client = client
     }
 
-    func start() {
+    public func start() {
         guard subscriptionTask == nil, let client else { return }
         if engine.attachedNodes.contains(player) == false {
             engine.attach(player)
         }
-        configureSessionIfNeeded()
+        #if os(iOS) || os(watchOS)
+        // macOS has no AVAudioSession; AVAudioEngine plays through the
+        // default output device without any session category setup. The
+        // session may stay un-activated on backgrounded launch; the next
+        // start() call retries.
+        try? AudioSessionCoordinator.activatePlayback()
+        #endif
+        subscriptionGeneration += 1
+        let generation = subscriptionGeneration
         subscriptionTask = Task { [weak self] in
             guard let self else { return }
+            // Clear the slot when this subscription ends so a later start()
+            // can re-subscribe — a stale non-nil task blocks restarts forever.
+            defer {
+                if self.subscriptionGeneration == generation {
+                    self.subscriptionTask = nil
+                }
+            }
             do {
                 let stream = await client.playbackEvents()
                 for try await event in stream {
@@ -57,12 +74,13 @@ final class AudioPlaybackService {
                     self.handle(event: event)
                 }
             } catch {
-                // Subscription stopped; will resume on next start().
+                UboLog.audio.error("playback subscription ended: \(error.localizedDescription)")
             }
         }
     }
 
-    func stop() {
+    public func stop() {
+        subscriptionGeneration += 1
         subscriptionTask?.cancel()
         subscriptionTask = nil
         player.stop()
@@ -89,7 +107,7 @@ final class AudioPlaybackService {
         }
     }
 
-    private struct SequenceState {
+    struct SequenceState {
         var nextIndex: Int = 0
         var pending: [Int: (AudioSampleData, Float)] = [:]
     }
@@ -214,26 +232,6 @@ final class AudioPlaybackService {
         if engine.isRunning {
             player.play()
         }
-    }
-
-    private func configureSessionIfNeeded() {
-        #if os(iOS)
-        // macOS has no AVAudioSession; AVAudioEngine plays through the default
-        // output device without any session category setup.
-        guard !sessionConfigured else { return }
-        do {
-            try AVAudioSession.sharedInstance().setCategory(
-                .playback,
-                mode: .default,
-                options: [.mixWithOthers]
-            )
-            try AVAudioSession.sharedInstance().setActive(true)
-            sessionConfigured = true
-        } catch {
-            // Audio session may stay un-activated on backgrounded launch;
-            // the next start() call will retry.
-        }
-        #endif
     }
 }
 #endif

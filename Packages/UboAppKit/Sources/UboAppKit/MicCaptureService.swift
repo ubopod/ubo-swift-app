@@ -1,29 +1,31 @@
 //
 //  MicCaptureService.swift
-//  ubo-swift-app
 //
 //  Captures PCM16 microphone samples via AVAudioEngine and streams them
 //  to the device as `AudioReportSampleAction`s. Mirrors the Web UI's
 //  `reportAudioSample` flow at the assistant pipeline's expected rate.
+//  Shared by the iOS/macOS and watchOS targets — same wire format
+//  (PCM16 mono @ 16 kHz) so the Pi's assistant pipeline receives
+//  identical frames regardless of which client is talking.
 //
 
-#if os(iOS) || os(macOS)
+#if os(iOS) || os(macOS) || os(watchOS)
 import Foundation
 import AVFAudio
 import AVFoundation
 import UboSwift
 
 @MainActor
-final class MicCaptureService {
+public final class MicCaptureService {
     private let engine = AVAudioEngine()
     private var converter: AVAudioConverter?
     private var startedAt: Date = .distantPast
-    private(set) var isRunning: Bool = false
+    public private(set) var isRunning: Bool = false
 
     /// Format the device expects: PCM16 mono @ 16 kHz.
     private let targetFormat = AVAudioFormat(
         commonFormat: .pcmFormatInt16,
-        sampleRate: 16000,
+        sampleRate: UboConstants.micSampleRate,
         channels: 1,
         interleaved: true
     )!
@@ -38,13 +40,15 @@ final class MicCaptureService {
     private var tapCount = 0
     private var sampleCount = 0
 
-    func configure(client: UboClient) {
+    public init() {}
+
+    public func configure(client: UboClient) {
         self.client = client
     }
 
-    func start(audioSource: String = "") async throws {
+    public func start(audioSource: String = "") async throws {
         guard !isRunning else { UboLog.audio.info("mic start ignored — already running"); return }
-        guard let client else { UboLog.audio.error("mic start aborted — no client configured"); return }
+        guard client != nil else { UboLog.audio.error("mic start aborted — no client configured"); return }
         self.audioSource = audioSource
         tapCount = 0
         sampleCount = 0
@@ -53,11 +57,9 @@ final class MicCaptureService {
         try await requestMicPermission()
         UboLog.audio.info("mic permission granted")
 
-        #if os(iOS)
+        #if os(iOS) || os(watchOS)
         // macOS has no AVAudioSession; AVAudioEngine drives the input node directly.
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
-        try session.setActive(true)
+        try AudioSessionCoordinator.activateCapture()
         #endif
 
         let input = engine.inputNode
@@ -67,7 +69,7 @@ final class MicCaptureService {
             "input format: rate=\(inputFormat.sampleRate) ch=\(inputFormat.channelCount); converter=\(self.converter == nil ? "NIL ⚠️" : "ok")"
         )
 
-        let bufferSize: AVAudioFrameCount = 1024
+        let bufferSize: AVAudioFrameCount = UboConstants.micTapBufferSize
         input.installTap(onBus: 0, bufferSize: bufferSize, format: inputFormat) { [weak self] buffer, _ in
             guard let self else { return }
             let elapsed = Float(Date().timeIntervalSince(self.startedAt))
@@ -88,12 +90,14 @@ final class MicCaptureService {
         UboLog.audio.info("mic engine started — streaming to core")
     }
 
-    func stop() {
+    public func stop() {
         guard isRunning else { return }
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
-        #if os(iOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #if os(iOS) || os(watchOS)
+        // Hand the shared session back to playback — deactivating it here
+        // would kill device audio after every push-to-talk cycle.
+        AudioSessionCoordinator.restorePlayback()
         #endif
         isRunning = false
     }
@@ -155,7 +159,7 @@ final class MicCaptureService {
                     timestamp: timestamp,
                     data: data,
                     channels: 1,
-                    rate: 16000,
+                    rate: Int(UboConstants.micSampleRate),
                     width: 2,
                     audioSource: self.audioSource
                 )
@@ -166,7 +170,7 @@ final class MicCaptureService {
     }
 
     private func requestMicPermission() async throws {
-        #if os(iOS)
+        #if os(iOS) || os(watchOS)
         let granted = await withCheckedContinuation { (cont: CheckedContinuation<Bool, Never>) in
             AVAudioApplication.requestRecordPermission { allowed in
                 cont.resume(returning: allowed)

@@ -1,6 +1,5 @@
 //
 //  Markup.swift
-//  ubo-swift-app
 //
 //  Render Kivy / BBCode-style markup as a styled SwiftUI `Text`. The
 //  Python core feeds notification bodies and similar surfaces with
@@ -26,7 +25,7 @@ public func markupText(_ raw: String) -> Text {
         if s.bold { t = t.bold() }
         if s.italic { t = t.italic() }
         if s.underline { t = t.underline() }
-        if let c = s.color { t = t.foregroundColor(c) }
+        if let c = s.color { t = t.foregroundStyle(c) }
         out = out + t
     }
     return out
@@ -43,7 +42,8 @@ public func stripMarkup(_ raw: String) -> String {
     )
 }
 
-private struct MarkupSegment {
+// Internal (not private) so package unit tests can exercise the parser.
+struct MarkupSegment {
     var text: String = ""
     var bold: Bool = false
     var italic: Bool = false
@@ -53,7 +53,7 @@ private struct MarkupSegment {
 
 private let markupTagPattern = #"\[(/?)([a-zA-Z]+)(?:=([^\]]+))?\]"#
 
-private func parseMarkupSegments(_ raw: String) -> [MarkupSegment] {
+func parseMarkupSegments(_ raw: String) -> [MarkupSegment] {
     guard let regex = try? NSRegularExpression(pattern: markupTagPattern) else {
         return [MarkupSegment(text: raw)]
     }
@@ -67,8 +67,8 @@ private func parseMarkupSegments(_ raw: String) -> [MarkupSegment] {
 
     for match in matches {
         let r = match.range
-        if r.location > cursor {
-            var seg = stack.last!
+        if r.location > cursor, let current = stack.last {
+            var seg = current
             seg.text = ns.substring(with: NSRange(location: cursor, length: r.location - cursor))
             segments.append(seg)
         }
@@ -83,7 +83,7 @@ private func parseMarkupSegments(_ raw: String) -> [MarkupSegment] {
             continue
         }
 
-        var top = stack.last!
+        var top = stack.last ?? MarkupSegment()
         switch tag {
         case "b": top.bold = true
         case "i": top.italic = true
@@ -101,8 +101,8 @@ private func parseMarkupSegments(_ raw: String) -> [MarkupSegment] {
         stack.append(top)
     }
 
-    if cursor < ns.length {
-        var seg = stack.last!
+    if cursor < ns.length, let current = stack.last {
+        var seg = current
         seg.text = ns.substring(from: cursor)
         segments.append(seg)
     }

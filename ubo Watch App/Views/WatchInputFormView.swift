@@ -7,6 +7,7 @@
 //  Submits via `provideInput`, dismisses via `cancelInput`.
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 
