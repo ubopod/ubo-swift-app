@@ -39,13 +39,13 @@ struct WatchActionsView: View {
                     }
 
                     Button {
-                        Task { try? await viewModel.client.playChime(.done) }
+                        viewModel.perform("playChime") { try await viewModel.client.playChime(.done) }
                     } label: {
                         Label("Play Chime", systemImage: "bell.fill")
                     }
 
                     Button {
-                        Task { try? await viewModel.client.toggleMute() }
+                        viewModel.perform("toggleMute") { try await viewModel.client.toggleMute() }
                     } label: {
                         Label(
                             (viewModel.cachedIsPlaybackMute ?? false) ? "Unmute" : "Mute",
@@ -56,7 +56,7 @@ struct WatchActionsView: View {
                     }
 
                     Button {
-                        Task { try? await viewModel.client.toggleMute(device: .input) }
+                        viewModel.perform("toggleMute") { try await viewModel.client.toggleMute(device: .input) }
                     } label: {
                         Label(
                             (viewModel.cachedIsCaptureMute ?? false) ? "Unmute Mic" : "Mute Mic",
@@ -69,19 +69,19 @@ struct WatchActionsView: View {
 
                 Section("LEDs") {
                     Button {
-                        Task { try? await viewModel.client.rainbowLEDs() }
+                        viewModel.perform("rainbowLEDs") { try await viewModel.client.rainbowLEDs() }
                     } label: {
                         Label("Rainbow", systemImage: "rainbow")
                     }
 
                     Button {
-                        Task { try? await viewModel.client.pulseLEDs(color: .blue) }
+                        viewModel.perform("pulseLEDs") { try await viewModel.client.pulseLEDs(color: .blue) }
                     } label: {
                         Label("Pulse", systemImage: "waveform.path")
                     }
 
                     Button {
-                        Task { try? await viewModel.client.clearLEDs() }
+                        viewModel.perform("clearLEDs") { try await viewModel.client.clearLEDs() }
                     } label: {
                         Label("LEDs Off", systemImage: "lightbulb.slash")
                     }
@@ -89,13 +89,13 @@ struct WatchActionsView: View {
 
                 Section("Display") {
                     Button {
-                        Task { try? await viewModel.client.blankDisplay() }
+                        viewModel.perform("blankDisplay") { try await viewModel.client.blankDisplay() }
                     } label: {
                         Label("Sleep", systemImage: "moon.fill")
                     }
 
                     Button {
-                        Task { try? await viewModel.client.unblankDisplay() }
+                        viewModel.perform("unblankDisplay") { try await viewModel.client.unblankDisplay() }
                     } label: {
                         Label("Wake", systemImage: "sun.max.fill")
                     }
@@ -106,19 +106,23 @@ struct WatchActionsView: View {
                         Task { await viewModel.toggleMicCapture() }
                     } label: {
                         Label(
-                            viewModel.micCapture.isRunning ? "Stop Talking" : "Push to Talk",
-                            systemImage: viewModel.micCapture.isRunning
+                            viewModel.isAssistantListening ? "Stop Talking" : "Push to Talk",
+                            systemImage: viewModel.isAssistantListening
                                 ? "mic.fill"
                                 : "mic.circle"
                         )
-                        .foregroundStyle(viewModel.micCapture.isRunning ? Color.red : Color.primary)
+                        .foregroundStyle(viewModel.isAssistantListening ? Color.red : Color.primary)
                     }
 
+                    // Device-routed session (the Pi listens with its own
+                    // mics). Disabled while the watch mic is streaming so the
+                    // two entry points can't interleave and desync.
                     Button {
-                        Task { try? await viewModel.client.toggleAssistantListening() }
+                        viewModel.perform("toggleAssistantListening") { try await viewModel.client.toggleAssistantListening() }
                     } label: {
-                        Label("Toggle Assistant", systemImage: "waveform.circle.fill")
+                        Label("Assistant on Pod", systemImage: "waveform.circle.fill")
                     }
+                    .disabled(viewModel.isAssistantListening)
                 }
 
                 Section("Power") {
@@ -155,9 +159,9 @@ struct WatchActionsView: View {
         Task {
             switch powerAction {
             case .reboot:
-                try? await viewModel.client.reboot()
+                do { try await viewModel.client.reboot() } catch { viewModel.report("reboot", error) }
             case .powerOff:
-                try? await viewModel.client.powerOff()
+                do { try await viewModel.client.powerOff() } catch { viewModel.report("powerOff", error) }
             case .none:
                 break
             }

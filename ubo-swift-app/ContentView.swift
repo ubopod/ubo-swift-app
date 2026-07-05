@@ -50,7 +50,7 @@ struct ContentView: View {
         .task {
             // Auto-reconnect with saved settings on launch
             if !needsOnboarding && !viewModel.isConnected && !viewModel.isConnecting && viewModel.hasSavedConnection {
-                try? await viewModel.connectWithSavedSettings()
+                do { try await viewModel.connectWithSavedSettings() } catch { viewModel.report("connectWithSavedSettings", error) }
             }
             hasAttemptedAutoConnect = true
         }
@@ -70,11 +70,15 @@ struct ContentView: View {
                 || viewModel.savedHost != request.host
                 || viewModel.savedPort != request.port
             if needsConnect {
-                try? await viewModel.connect(
-                    host: request.host,
-                    port: request.port,
-                    useTLS: request.useTLS
-                )
+                do {
+                    try await viewModel.connect(
+                        host: request.host,
+                        port: request.port,
+                        useTLS: request.useTLS
+                    )
+                } catch {
+                    viewModel.report("connect", error)
+                }
             }
             selectedTab = .device
         }

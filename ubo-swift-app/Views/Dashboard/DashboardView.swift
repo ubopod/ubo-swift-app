@@ -27,7 +27,7 @@ struct DashboardView: View {
             }
             .refreshable {
                 // Navigate home to refresh the home view data
-                try? await viewModel.client.goHome()
+                do { try await viewModel.client.goHome() } catch { viewModel.report("goHome", error) }
             }
             .navigationTitle("Dashboard")
             .toolbar {

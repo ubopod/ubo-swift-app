@@ -12,6 +12,7 @@ import UboSwift
 @main
 struct UboWatchApp: App {
     @State private var viewModel = DeviceViewModel()
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         #if DEBUG
@@ -26,6 +27,16 @@ struct UboWatchApp: App {
         WindowGroup {
             WatchContentView()
                 .environment(viewModel)
+        }
+        // Wrist-down suspends the app and kills the audio engine; end the
+        // core-side listening session cleanly instead of leaving it bound
+        // to a dead mic, and re-arm playback on return.
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .background: viewModel.sceneDidEnterBackground()
+            case .active: viewModel.sceneDidBecomeActive()
+            default: break
+            }
         }
     }
 }

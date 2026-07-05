@@ -34,18 +34,18 @@ struct RemoteControlView: View {
         VStack(spacing: 0) {
             // Up button
             RemoteButton(systemImage: "chevron.up") {
-                Task { try? await viewModel.client.scrollUp() }
+                viewModel.perform("scrollUp") { try await viewModel.client.scrollUp() }
             }
 
             HStack(spacing: 0) {
                 // Back button
                 RemoteButton(systemImage: "chevron.left") {
-                    Task { try? await viewModel.client.goBack() }
+                    viewModel.perform("goBack") { try await viewModel.client.goBack() }
                 }
 
                 // Home button (center)
                 RemoteButton(systemImage: "house.fill", isCenter: true) {
-                    Task { try? await viewModel.client.goHome() }
+                    viewModel.perform("goHome") { try await viewModel.client.goHome() }
                 }
 
                 // Empty space for symmetry (or could add forward)
@@ -58,7 +58,7 @@ struct RemoteControlView: View {
 
             // Down button
             RemoteButton(systemImage: "chevron.down") {
-                Task { try? await viewModel.client.scrollDown() }
+                viewModel.perform("scrollDown") { try await viewModel.client.scrollDown() }
             }
         }
     }
@@ -71,15 +71,15 @@ struct RemoteControlView: View {
 
             HStack(spacing: 20) {
                 SideButton(label: "L1") {
-                    Task { try? await viewModel.client.pressL1() }
+                    viewModel.perform("pressL1") { try await viewModel.client.pressL1() }
                 }
 
                 SideButton(label: "L2") {
-                    Task { try? await viewModel.client.pressL2() }
+                    viewModel.perform("pressL2") { try await viewModel.client.pressL2() }
                 }
 
                 SideButton(label: "L3") {
-                    Task { try? await viewModel.client.pressL3() }
+                    viewModel.perform("pressL3") { try await viewModel.client.pressL3() }
                 }
             }
         }

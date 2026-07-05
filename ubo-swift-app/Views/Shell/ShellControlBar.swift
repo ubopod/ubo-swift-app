@@ -104,8 +104,8 @@ struct ShellControlBar: View {
         return Array(stack.dropFirst().dropLast())
     }
 
-    private func dispatch(_ work: @escaping () async throws -> Void) {
-        Task { try? await work() }
+    private func dispatch(_ work: @escaping @Sendable () async throws -> Void) {
+        viewModel.perform("shell action", work)
     }
 }
 #endif

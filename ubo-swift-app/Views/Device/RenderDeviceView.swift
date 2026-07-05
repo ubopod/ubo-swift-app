@@ -53,7 +53,7 @@ struct RenderDeviceView: View {
                     HStack(spacing: 12) {
                         ForEach(data.items, id: \.key) { item in
                             Button(item.label.isEmpty ? item.key : item.label) {
-                                Task { try? await viewModel.client.selectMenuItem(label: item.label) }
+                                viewModel.perform("selectMenuItem") { try await viewModel.client.selectMenuItem(label: item.label) }
                             }
                             .buttonStyle(.bordered)
                         }

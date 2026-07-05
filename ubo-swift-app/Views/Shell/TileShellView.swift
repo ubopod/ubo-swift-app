@@ -118,41 +118,17 @@ struct TileShellView: View {
                 focused: focused,
                 onSelect: activateItem
             )
-        case .notification(let data):
-            NotificationDeviceView(data: data)
-        case .prompt(let data):
-            PromptDeviceView(data: data)
-        case .instruction(let data):
-            InstructionDeviceView(data: data)
-        case .render(let data):
-            RenderDeviceView(data: data)
-        case .chat(let data):
-            ChatDeviceView(data: data)
-        case .application(let data):
-            ApplicationDeviceView(data: data)
-        case .none:
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        default:
+            StandardViewContent(view: viewModel.currentView)
         }
     }
 
     private var title: String {
-        switch viewModel.currentView {
-        case .home: return "Home"
-        case .menu(let d): return d.title.isEmpty ? "Menu" : d.title
-        case .notification: return "Notification"
-        case .application(let d): return d.applicationId
-        case .instruction(let d): return d.title.isEmpty ? "Instruction" : d.title
-        case .prompt(let d): return d.title.isEmpty ? "Prompt" : d.title
-        case .render(let d): return d.title.isEmpty ? "Render" : d.title
-        case .chat: return "Assistant"
-        case .none: return "Device"
-        }
+        viewModel.currentView.uboTitle
     }
 
     private var showsBack: Bool {
-        if case .home = viewModel.currentView { return false }
-        return true
+        viewModel.currentView.uboShowsBack
     }
 
     // MARK: - Focusable model
@@ -253,8 +229,8 @@ struct TileShellView: View {
     private func goBack() { dispatch { try await viewModel.client.goBack() } }
 
     /// Fire-and-forget dispatch helper so call sites stay one line.
-    private func dispatch(_ work: @escaping () async throws -> Void) {
-        Task { try? await work() }
+    private func dispatch(_ work: @escaping @Sendable () async throws -> Void) {
+        viewModel.perform("shell action", work)
     }
 
     #if os(macOS)
@@ -398,7 +374,7 @@ private struct TVInputQRView: View {
                     .foregroundStyle(.secondary)
             }
             Button("Cancel", role: .cancel) {
-                Task { try? await viewModel.client.cancelInput(id: description.id) }
+                viewModel.perform("cancelInput") { try await viewModel.client.cancelInput(id: description.id) }
                 onCancel()
             }
             .focused($cancelFocused)

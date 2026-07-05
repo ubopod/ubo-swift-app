@@ -45,7 +45,7 @@ struct WatchInputFormView: View {
                         UboLog.input.info("user cancelled input \(description.id)")
                         onClose()
                         Task {
-                            try? await viewModel.client.cancelInput(id: description.id)
+                            do { try await viewModel.client.cancelInput(id: description.id) } catch { viewModel.report("cancelInput", error) }
                         }
                     }
                 }
@@ -94,6 +94,6 @@ struct WatchInputFormView: View {
         let scalar = description.fields.first.flatMap { values[$0.name] } ?? ""
         UboLog.input.info("submitting input \(description.id) with scalar=\"\(scalar)\"")
         onClose()
-        try? await viewModel.client.provideInput(id: description.id, value: scalar)
+        do { try await viewModel.client.provideInput(id: description.id, value: scalar) } catch { viewModel.report("provideInput", error) }
     }
 }

@@ -31,7 +31,7 @@ struct QuickActionsView: View {
                     icon: "bell.fill",
                     color: .blue
                 ) {
-                    Task { try? await viewModel.client.playChime(.done) }
+                    viewModel.perform("playChime") { try await viewModel.client.playChime(.done) }
                 }
 
                 ActionButton(
@@ -39,7 +39,7 @@ struct QuickActionsView: View {
                     icon: "speaker.slash.fill",
                     color: .orange
                 ) {
-                    Task { try? await viewModel.client.toggleMute() }
+                    viewModel.perform("toggleMute") { try await viewModel.client.toggleMute() }
                 }
 
                 ActionButton(
@@ -47,7 +47,7 @@ struct QuickActionsView: View {
                     icon: "rainbow",
                     color: .purple
                 ) {
-                    Task { try? await viewModel.client.rainbowLEDs() }
+                    viewModel.perform("rainbowLEDs") { try await viewModel.client.rainbowLEDs() }
                 }
 
                 ActionButton(
@@ -55,7 +55,7 @@ struct QuickActionsView: View {
                     icon: "waveform.path",
                     color: .pink
                 ) {
-                    Task { try? await viewModel.client.pulseLEDs(color: .blue) }
+                    viewModel.perform("pulseLEDs") { try await viewModel.client.pulseLEDs(color: .blue) }
                 }
 
                 ActionButton(
@@ -63,7 +63,7 @@ struct QuickActionsView: View {
                     icon: "lightbulb.slash",
                     color: .gray
                 ) {
-                    Task { try? await viewModel.client.clearLEDs() }
+                    viewModel.perform("clearLEDs") { try await viewModel.client.clearLEDs() }
                 }
 
                 ActionButton(
@@ -71,7 +71,7 @@ struct QuickActionsView: View {
                     icon: "moon.fill",
                     color: .cyan
                 ) {
-                    Task { try? await viewModel.client.blankDisplay() }
+                    viewModel.perform("blankDisplay") { try await viewModel.client.blankDisplay() }
                 }
 
                 ActionButton(
@@ -79,7 +79,7 @@ struct QuickActionsView: View {
                     icon: "sun.max.fill",
                     color: .yellow
                 ) {
-                    Task { try? await viewModel.client.unblankDisplay() }
+                    viewModel.perform("unblankDisplay") { try await viewModel.client.unblankDisplay() }
                 }
 
                 ActionButton(
@@ -87,7 +87,7 @@ struct QuickActionsView: View {
                     icon: "waveform.circle.fill",
                     color: .green
                 ) {
-                    Task { try? await viewModel.client.toggleAssistantListening() }
+                    viewModel.perform("toggleAssistantListening") { try await viewModel.client.toggleAssistantListening() }
                 }
             }
         }

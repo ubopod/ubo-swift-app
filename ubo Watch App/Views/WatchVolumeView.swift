@@ -35,7 +35,7 @@ struct WatchVolumeView: View {
                 .padding(.horizontal, 4)
 
             Button {
-                Task { try? await viewModel.client.toggleMute() }
+                viewModel.perform("toggleMute") { try await viewModel.client.toggleMute() }
             } label: {
                 Label(isMuted ? "Unmute" : "Mute",
                       systemImage: isMuted ? "speaker.fill" : "speaker.slash.fill")
@@ -70,7 +70,7 @@ struct WatchVolumeView: View {
                 try? await Task.sleep(nanoseconds: 150_000_000)
                 guard !Task.isCancelled else { return }
                 let target = Float(newValue)
-                try? await viewModel.client.setVolume(target)
+                do { try await viewModel.client.setVolume(target) } catch { viewModel.report("setVolume", error) }
                 isEditing = false
             }
         }

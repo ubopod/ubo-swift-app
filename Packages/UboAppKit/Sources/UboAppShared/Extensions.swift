@@ -51,3 +51,14 @@ public extension View {
     }
 }
 #endif
+
+public extension View {
+    /// Light impact haptic on iOS; no-op on platforms without
+    /// UIImpactFeedbackGenerator. One definition instead of a private
+    /// copy per view struct.
+    func triggerHaptic() {
+        #if os(iOS)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        #endif
+    }
+}

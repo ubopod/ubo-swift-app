@@ -317,14 +317,14 @@ struct WatchPromptView: View {
 
                 if data.items.isEmpty {
                     Button("Dismiss") {
-                        Task { try? await viewModel.client.goBack() }
+                        viewModel.perform("goBack") { try await viewModel.client.goBack() }
                     }
                     .font(.caption2)
                     .buttonStyle(.bordered)
                 } else {
                     ForEach(data.items, id: \.key) { item in
                         Button {
-                            Task { try? await viewModel.client.selectMenuItem(label: item.label) }
+                            viewModel.perform("selectMenuItem") { try await viewModel.client.selectMenuItem(label: item.label) }
                         } label: {
                             markupText(item.label.isEmpty ? item.key : item.label)
                                 .font(.caption2)

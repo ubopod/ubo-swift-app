@@ -35,7 +35,7 @@ struct WatchDeviceView: View {
             HStack {
                 if showBackButton {
                     Button {
-                        Task { try? await viewModel.client.goBack() }
+                        viewModel.perform("goBack") { try await viewModel.client.goBack() }
                     } label: {
                         Image(systemName: "chevron.left")
                             .font(.caption2)
@@ -59,7 +59,7 @@ struct WatchDeviceView: View {
                 Spacer()
 
                 Button {
-                    Task { try? await viewModel.client.goHome() }
+                    viewModel.perform("goHome") { try await viewModel.client.goHome() }
                 } label: {
                     Image(systemName: "house")
                         .font(.caption2)
@@ -164,9 +164,9 @@ struct WatchHomeView: View {
                     Task {
                         // Use key for selection if icon is empty
                         if item.icon.isEmpty {
-                            try? await viewModel.client.selectMenuItem(label: displayLabel(for: item))
+                            do { try await viewModel.client.selectMenuItem(label: displayLabel(for: item)) } catch { viewModel.report("selectMenuItem", error) }
                         } else {
-                            try? await viewModel.client.selectMenuItem(icon: item.icon)
+                            do { try await viewModel.client.selectMenuItem(icon: item.icon) } catch { viewModel.report("selectMenuItem", error) }
                         }
                     }
                 } label: {
@@ -236,7 +236,7 @@ struct WatchMenuView: View {
             ForEach(data.items.compactMap { $0 }, id: \.key) { item in
                 Button {
                     Task {
-                        try? await viewModel.client.selectMenuItem(label: item.label)
+                        do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
                     }
                 } label: {
                     WatchMenuItemRow(item: item)
@@ -307,7 +307,7 @@ struct WatchNotificationView: View {
                 if let extra = partitioned.extraInfo {
                     Button {
                         Task {
-                            try? await viewModel.client.selectMenuItem(label: extra.label)
+                            do { try await viewModel.client.selectMenuItem(label: extra.label) } catch { viewModel.report("selectMenuItem", error) }
                         }
                     } label: {
                         Label("Read Aloud", systemImage: "speaker.wave.2.circle.fill")
@@ -321,7 +321,7 @@ struct WatchNotificationView: View {
                     ForEach(partitioned.mainActions, id: \.key) { item in
                         Button {
                             Task {
-                                try? await viewModel.client.selectMenuItem(label: item.label)
+                                do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
                             }
                         } label: {
                             markupText(item.label)
@@ -335,7 +335,7 @@ struct WatchNotificationView: View {
                 // when there's nothing else to interact with.
                 if partitioned.hasDismiss || partitioned.mainActions.isEmpty {
                     Button("Dismiss") {
-                        Task { try? await viewModel.client.goBack() }
+                        viewModel.perform("goBack") { try await viewModel.client.goBack() }
                     }
                     .font(.caption2)
                     .buttonStyle(.bordered)
@@ -386,7 +386,7 @@ struct WatchApplicationView: View {
             // Navigation controls
             HStack(spacing: 16) {
                 Button {
-                    Task { try? await viewModel.client.goBack() }
+                    viewModel.perform("goBack") { try await viewModel.client.goBack() }
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.caption)
@@ -396,7 +396,7 @@ struct WatchApplicationView: View {
                 .buttonStyle(.plain)
 
                 Button {
-                    Task { try? await viewModel.client.goHome() }
+                    viewModel.perform("goHome") { try await viewModel.client.goHome() }
                 } label: {
                     Image(systemName: "house.fill")
                         .font(.caption)
