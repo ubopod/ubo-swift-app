@@ -75,6 +75,21 @@ struct WatchInputFormView: View {
             Picker(field.label, selection: binding) {
                 ForEach(field.options, id: \.self) { Text($0).tag($0) }
             }
+        case .range:
+            VStack(alignment: .leading) {
+                Text(field.label)
+                Slider(
+                    value: Binding(
+                        get: { Double(binding.wrappedValue) ?? 50 },
+                        set: { binding.wrappedValue = String(Int($0)) }
+                    ),
+                    in: 0...100,
+                    step: 1
+                )
+                Text("\(Int(Double(binding.wrappedValue) ?? 50))%")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         case .color, .file, .date, .time:
             // Watch has no first-class control for these; fall back to text.
             TextField(field.label, text: binding)
@@ -85,7 +100,12 @@ struct WatchInputFormView: View {
         guard values.isEmpty else { return }
         var seeded: [String: String] = [:]
         for field in description.fields {
-            seeded[field.name] = field.defaultValue ?? ""
+            if field.type == .range {
+                let defaultValue = field.defaultValue.flatMap(Double.init) ?? 50
+                seeded[field.name] = String(Int(defaultValue))
+            } else {
+                seeded[field.name] = field.defaultValue ?? ""
+            }
         }
         values = seeded
     }
