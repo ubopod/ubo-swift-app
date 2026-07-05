@@ -112,9 +112,33 @@ public final class AudioPlaybackService {
         var pending: [Int: (AudioSampleData, Float)] = [:]
     }
 
+    /// Pure reorder step: merge one chunk into `state` and return the
+    /// chunks that are now ready to play, in order. `sample == nil` is
+    /// used by the Python core as a terminator — it just advances the
+    /// counter. `finished` means the sequence drained completely and its
+    /// state can be dropped. Static + pure so unit tests can drive it.
+    nonisolated static func merge(
+        index: Int,
+        sample: AudioSampleData?,
+        volume: Float,
+        into state: inout SequenceState
+    ) -> (ready: [(AudioSampleData, Float)], finished: Bool) {
+        if let sample {
+            state.pending[index] = (sample, volume)
+        } else if state.nextIndex == index {
+            state.nextIndex += 1
+        }
+
+        var ready: [(AudioSampleData, Float)] = []
+        while let chunk = state.pending.removeValue(forKey: state.nextIndex) {
+            ready.append(chunk)
+            state.nextIndex += 1
+        }
+        return (ready, state.pending.isEmpty && sample == nil)
+    }
+
     /// Buffer chunks until the next-expected `index` arrives, then drain
-    /// them in order. `sample == nil` is used by the Python core as a
-    /// terminator — we just advance the counter.
+    /// them in order.
     private func queueSequenceChunk(
         id: String,
         index: Int,
@@ -122,18 +146,12 @@ public final class AudioPlaybackService {
         volume: Float
     ) {
         var state = sequences[id] ?? SequenceState()
-        if let sample {
-            state.pending[index] = (sample, volume)
-        } else if state.nextIndex == index {
-            state.nextIndex += 1
-        }
-
-        while let chunk = state.pending.removeValue(forKey: state.nextIndex) {
+        let result = Self.merge(index: index, sample: sample, volume: volume, into: &state)
+        for chunk in result.ready {
             schedule(sample: chunk.0, volume: chunk.1)
-            state.nextIndex += 1
         }
 
-        if state.pending.isEmpty && sample == nil {
+        if result.finished {
             sequences.removeValue(forKey: id)
         } else {
             sequences[id] = state

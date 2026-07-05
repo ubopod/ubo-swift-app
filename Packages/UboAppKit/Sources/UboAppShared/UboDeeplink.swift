@@ -1,6 +1,5 @@
 //
 //  UboDeeplink.swift
-//  ubo-swift-app
 //
 //  The `ubo://` URL scheme used to hand a text-input demand from a lean
 //  client (Apple TV) to a phone that can type. The TV encodes its own
@@ -10,22 +9,21 @@
 //  so this is a bootstrap + focus convenience, not a data channel.
 //
 
-import UboAppKit
 import Foundation
 
-enum UboDeeplink {
-    static let scheme = "ubo"
-    static let inputHost = "input"
+public enum UboDeeplink {
+    public static let scheme = "ubo"
+    public static let inputHost = "input"
 
-    struct InputRequest {
-        let host: String
-        let port: Int
-        let useTLS: Bool
-        let inputId: String
+    public struct InputRequest {
+        public let host: String
+        public let port: Int
+        public let useTLS: Bool
+        public let inputId: String
     }
 
     /// Builds `ubo://input?host=…&port=…&tls=0|1&id=…` for the on-TV QR code.
-    static func inputURL(host: String, port: Int, useTLS: Bool, inputId: String) -> URL? {
+    public static func inputURL(host: String, port: Int, useTLS: Bool, inputId: String) -> URL? {
         guard !host.isEmpty else { return nil }
         var components = URLComponents()
         components.scheme = scheme
@@ -40,7 +38,7 @@ enum UboDeeplink {
     }
 
     /// Parses an incoming `ubo://input?…` URL on the receiving phone.
-    static func parseInput(_ url: URL) -> InputRequest? {
+    public static func parseInput(_ url: URL) -> InputRequest? {
         guard url.scheme == scheme,
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               components.host == inputHost else {
@@ -49,7 +47,7 @@ enum UboDeeplink {
         let items = components.queryItems ?? []
         func value(_ name: String) -> String? { items.first { $0.name == name }?.value }
         guard let host = value("host"), !host.isEmpty else { return nil }
-        let port = Int(value("port") ?? "") ?? 50051
+        let port = Int(value("port") ?? "") ?? UboConstants.defaultPort
         let useTLS = value("tls") == "1"
         return InputRequest(host: host, port: port, useTLS: useTLS, inputId: value("id") ?? "")
     }
