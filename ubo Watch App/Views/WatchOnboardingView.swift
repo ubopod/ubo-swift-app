@@ -5,6 +5,7 @@
 //  Created by Nathan Perrier on 28/1/2026.
 //
 
+import UboAppKit
 import SwiftUI
 
 struct WatchOnboardingView: View {

@@ -5,6 +5,7 @@
 //  Widget bundle for Ubo system status
 //
 
+import UboAppShared
 import WidgetKit
 import SwiftUI
 

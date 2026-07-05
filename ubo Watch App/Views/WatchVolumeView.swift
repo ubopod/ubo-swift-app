@@ -9,6 +9,7 @@
 //  show up immediately.
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 

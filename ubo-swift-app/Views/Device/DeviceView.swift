@@ -5,6 +5,7 @@
 //  Native iOS interface for the Ubo Pod
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 
@@ -277,33 +278,6 @@ struct HomeMenuCard: View {
         #endif
     }
 
-    private func mapIcon(_ icon: String) -> String {
-        switch icon.lowercased() {
-        // Key-based mappings
-        case "main": return "list.bullet"
-        case "notifications": return "bell"
-        case "power": return "power"
-        // Icon-based mappings
-        case "settings", "gear", "󰒓": return "gear"
-        case "wifi", "󰖩": return "wifi"
-        case "bluetooth", "󰂯": return "bluetooth"
-        case "apps", "󰀻": return "square.grid.2x2"
-        case "󰐥": return "power"
-        case "info", "󰋼": return "info.circle"
-        case "update", "󰚰": return "arrow.down.circle"
-        case "docker", "󰡨": return "shippingbox"
-        case "home", "󰋜": return "house"
-        case "lightbulb", "󰌵": return "lightbulb"
-        case "camera", "󰄀": return "camera"
-        case "microphone", "󰍬": return "mic"
-        case "speaker", "󰓃": return "speaker.wave.2"
-        case "network", "󰛳": return "network"
-        case "ssh", "󰣀": return "terminal"
-        case "vpn", "󰖂": return "lock.shield"
-        case "bell", "󰂞": return "bell"
-        default: return "circle.fill"
-        }
-    }
 }
 
 // MARK: - Menu View

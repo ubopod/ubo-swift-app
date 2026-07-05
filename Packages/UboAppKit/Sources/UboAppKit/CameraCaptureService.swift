@@ -1,15 +1,27 @@
+//
+//  CameraCaptureService.swift
+//
+//  AVCaptureSession wrapper producing center-cropped RGB frames for the
+//  Pi's remote-camera pipeline.
+//
+//  Threading contract: session mutations (`start`/`stop`/`switchPosition`)
+//  run on `sessionQueue`; `captureOutput` and frame timing run on
+//  `processingQueue`; `isRunning` is the only state crossing queues and is
+//  lock-protected. Everything else must stay confined to its queue.
+//
+
 import AVFoundation
 import Foundation
 
 // Camera capture (AVCaptureSession video) exists only on iOS + macOS.
 #if os(iOS) || os(macOS)
 
-enum CameraError: Error, LocalizedError {
+public enum CameraError: Error, LocalizedError {
     case noCameraAvailable
     case inputCreationFailed
     case permissionDenied
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .noCameraAvailable: return "No camera available on this device"
         case .inputCreationFailed: return "Could not initialize camera input"
@@ -18,7 +30,7 @@ enum CameraError: Error, LocalizedError {
     }
 }
 
-protocol CameraCaptureDelegate: AnyObject {
+public protocol CameraCaptureDelegate: AnyObject {
     func cameraCaptureService(
         _ service: CameraCaptureService,
         didOutputRGBData data: Data,
@@ -33,29 +45,37 @@ protocol CameraCaptureDelegate: AnyObject {
     )
 }
 
-final class CameraCaptureService: NSObject {
-    weak var delegate: CameraCaptureDelegate?
+public final class CameraCaptureService: NSObject {
+    public weak var delegate: CameraCaptureDelegate?
 
     private let captureSession = AVCaptureSession()
     private let sessionQueue = DispatchQueue(label: "com.ubo.camera.session")
     private let processingQueue = DispatchQueue(label: "com.ubo.camera.processing")
 
-    private let targetSize = 240
-    private let minFrameInterval: TimeInterval = 1.0 / 12.0 // ~12 FPS
+    private let targetSize = UboConstants.cameraTargetSize
+    private let minFrameInterval: TimeInterval = UboConstants.cameraFrameInterval
+    /// Only touched on `processingQueue` (captureOutput).
     private var lastFrameTime: TimeInterval = 0
 
     // Pre-allocated RGB buffer for efficiency
     private var rgbBuffer: UnsafeMutablePointer<UInt8>?
     private let rgbBufferSize: Int
 
-    private(set) var isRunning = false
+    /// Written on `sessionQueue`, read from the delegate's error path on
+    /// arbitrary threads — lock-protected.
+    private let isRunningLock = NSLock()
+    private var _isRunning = false
+    public private(set) var isRunning: Bool {
+        get { isRunningLock.withLock { _isRunning } }
+        set { isRunningLock.withLock { _isRunning = newValue } }
+    }
 
     /// Position we're currently configured for (read on sessionQueue only).
     private var currentPosition: AVCaptureDevice.Position = .back
     private var currentInput: AVCaptureDeviceInput?
 
-    override init() {
-        rgbBufferSize = 240 * 240 * 3
+    override public init() {
+        rgbBufferSize = UboConstants.cameraTargetSize * UboConstants.cameraTargetSize * 3
         super.init()
         rgbBuffer = .allocate(capacity: rgbBufferSize)
     }
@@ -64,7 +84,7 @@ final class CameraCaptureService: NSObject {
         rgbBuffer?.deallocate()
     }
 
-    func start(position: AVCaptureDevice.Position = .back) {
+    public func start(position: AVCaptureDevice.Position = .back) {
         sessionQueue.async { [weak self] in
             guard let self else { return }
             self.currentPosition = position
@@ -72,7 +92,7 @@ final class CameraCaptureService: NSObject {
         }
     }
 
-    func stop() {
+    public func stop() {
         sessionQueue.async { [weak self] in
             guard let self, self.isRunning else { return }
             self.captureSession.stopRunning()
@@ -81,7 +101,7 @@ final class CameraCaptureService: NSObject {
     }
 
     /// Hot-swap front/rear without tearing down the entire session.
-    func switchPosition(to newPosition: AVCaptureDevice.Position) {
+    public func switchPosition(to newPosition: AVCaptureDevice.Position) {
         sessionQueue.async { [weak self] in
             guard let self, self.isRunning else { return }
             guard self.currentPosition != newPosition else { return }
@@ -172,13 +192,13 @@ final class CameraCaptureService: NSObject {
     }
 
     /// The underlying AVCaptureSession, for use with CameraPreviewView
-    var session: AVCaptureSession { captureSession }
+    public var session: AVCaptureSession { captureSession }
 
-    static func requestPermission() async -> Bool {
+    public static func requestPermission() async -> Bool {
         await AVCaptureDevice.requestAccess(for: .video)
     }
 
-    static var authorizationStatus: AVAuthorizationStatus {
+    public static var authorizationStatus: AVAuthorizationStatus {
         AVCaptureDevice.authorizationStatus(for: .video)
     }
 }
@@ -186,7 +206,7 @@ final class CameraCaptureService: NSObject {
 // MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
 
 extension CameraCaptureService: AVCaptureVideoDataOutputSampleBufferDelegate {
-    func captureOutput(
+    public func captureOutput(
         _ output: AVCaptureOutput,
         didOutput sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection

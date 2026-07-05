@@ -7,6 +7,7 @@
 //  and fall back to SF Symbols for semantic keys.
 //
 
+import UboAppKit
 import SwiftUI
 
 public enum UboIconFont {
@@ -55,7 +56,7 @@ public struct IconView: View {
                 .font(.custom(UboIconFont.family, size: size))
                 .foregroundStyle(color)
         } else if !icon.isEmpty {
-            Image(systemName: WatchSymbolMapper.systemName(for: icon))
+            Image(systemName: UboSymbolMapper.systemName(for: icon))
                 .font(.system(size: size))
                 .foregroundStyle(color)
         } else {

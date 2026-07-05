@@ -8,6 +8,7 @@
 //  tapped to toggle playback.
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 

@@ -9,6 +9,7 @@
 //  view used to host.
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 

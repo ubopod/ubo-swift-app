@@ -14,6 +14,7 @@
 //
 
 #if os(tvOS) || os(macOS)
+import UboAppKit
 import SwiftUI
 import UboSwift
 

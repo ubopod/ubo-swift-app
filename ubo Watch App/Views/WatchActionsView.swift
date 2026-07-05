@@ -8,6 +8,7 @@
 //  this tab and disturb menu scrolling on others.
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 

@@ -10,6 +10,7 @@
 //  so this is a bootstrap + focus convenience, not a data channel.
 //
 
+import UboAppKit
 import Foundation
 
 enum UboDeeplink {

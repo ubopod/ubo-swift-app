@@ -5,6 +5,7 @@
 //  System status widget for Ubo device
 //
 
+import UboAppShared
 import WidgetKit
 import SwiftUI
 

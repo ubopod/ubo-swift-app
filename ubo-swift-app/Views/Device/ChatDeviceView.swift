@@ -9,6 +9,7 @@
 //  playback, mirroring the device's L1/L2/L3 button binding.
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 

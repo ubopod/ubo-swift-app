@@ -8,6 +8,7 @@
 //  switch.
 //
 
+import UboAppKit
 import SwiftUI
 import CoreImage
 import CoreImage.CIFilterBuiltins
@@ -264,7 +265,7 @@ struct StatusRenderView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: SymbolMapper.systemName(for: iconName))
+            Image(systemName: UboSymbolMapper.systemName(for: iconName))
                 .font(.system(size: 48))
                 .foregroundStyle(Color.accentColor)
             if !data.title.isEmpty {
@@ -432,20 +433,3 @@ enum RGBFrameDecoder {
     }
 }
 
-enum SymbolMapper {
-    static func systemName(for icon: String) -> String {
-        switch icon.lowercased() {
-        case "info", "󰋼": return "info.circle"
-        case "warning", "alert", "󰀦": return "exclamationmark.triangle"
-        case "error", "fail", "failure": return "xmark.circle"
-        case "success", "ok", "check", "checkmark", "󰄬": return "checkmark.circle"
-        case "wifi", "󰖩": return "wifi"
-        case "ssh", "󰣀": return "terminal"
-        case "vpn", "󰖂": return "lock.shield"
-        case "docker", "󰡨": return "shippingbox"
-        case "settings", "gear", "󰒓": return "gear"
-        case "power", "󰐥": return "power"
-        default: return "circle"
-        }
-    }
-}

@@ -6,6 +6,7 @@
 //  GUI client's status bar for parity context.
 //
 
+import UboAppKit
 import SwiftUI
 import UboSwift
 
