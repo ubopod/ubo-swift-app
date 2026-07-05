@@ -94,7 +94,12 @@ struct InputFormView: View {
         guard values.isEmpty else { return }
         var seeded: [String: String] = [:]
         for field in description.fields {
-            seeded[field.name] = field.defaultValue ?? ""
+            if field.type == .range {
+                let defaultValue = field.defaultValue.flatMap(Double.init) ?? 50
+                seeded[field.name] = String(Int(defaultValue))
+            } else {
+                seeded[field.name] = field.defaultValue ?? ""
+            }
         }
         values = seeded
     }
@@ -184,6 +189,24 @@ private struct InputFieldEditor: View {
                     }
                 }
                 .pickerStyle(.menu)
+            case .range:
+                #if os(tvOS)
+                TextField(field.label, text: $value)
+                #else
+                Slider(
+                    value: Binding(
+                        get: { Double(value) ?? 50 },
+                        set: { value = String(Int($0)) }
+                    ),
+                    in: 0...100,
+                    step: 1
+                ) {
+                    Text(field.label)
+                }
+                Text("\(Int(Double(value) ?? 50))%")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                #endif
             case .file:
                 FilePickerButton(field: field, value: $value)
             case .date:
