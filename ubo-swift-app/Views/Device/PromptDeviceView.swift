@@ -41,7 +41,7 @@ struct PromptDeviceView: View {
 
             if data.items.isEmpty {
                 Button("Dismiss") {
-                    Task { try? await viewModel.client.goBack() }
+                    viewModel.perform("goBack") { try await viewModel.client.goBack() }
                 }
                 .buttonStyle(.bordered)
             } else {
@@ -50,7 +50,7 @@ struct PromptDeviceView: View {
                         Button {
                             triggerHaptic()
                             Task {
-                                try? await viewModel.client.selectMenuItem(label: item.label)
+                                do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
                             }
                         } label: {
                             markupText(item.label.isEmpty ? item.key : item.label)

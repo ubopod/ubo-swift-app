@@ -22,10 +22,21 @@ struct UboSwiftApp: App {
         UboIconFontBootstrap.ensureRegistered()
     }
 
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environment(viewModel)
+        }
+        // Backgrounding suspends the audio engine; end a live listening
+        // session cleanly and re-arm the playback subscription on return.
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .background: viewModel.sceneDidEnterBackground()
+            case .active: viewModel.sceneDidBecomeActive()
+            default: break
+            }
         }
     }
 }

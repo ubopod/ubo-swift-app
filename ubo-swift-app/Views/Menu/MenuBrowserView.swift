@@ -26,7 +26,7 @@ struct MenuBrowserView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
                         Task {
-                            try? await viewModel.client.goBack()
+                            do { try await viewModel.client.goBack() } catch { viewModel.report("goBack", error) }
                         }
                     } label: {
                         Image(systemName: "chevron.left")
@@ -36,7 +36,7 @@ struct MenuBrowserView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         Task {
-                            try? await viewModel.client.goHome()
+                            do { try await viewModel.client.goHome() } catch { viewModel.report("goHome", error) }
                         }
                     } label: {
                         Image(systemName: "house")
@@ -58,7 +58,7 @@ struct MenuBrowserView: View {
             ForEach(viewModel.menuItems, id: \.key) { item in
                 MenuItemRow(item: item) {
                     Task {
-                        try? await viewModel.client.selectMenuItem(label: item.label)
+                        do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
                     }
                 }
             }
@@ -68,7 +68,7 @@ struct MenuBrowserView: View {
         #endif
         .refreshable {
             // Request a display redraw to refresh the menu
-            try? await viewModel.client.requestDisplayRedraw()
+            do { try await viewModel.client.requestDisplayRedraw() } catch { viewModel.report("requestDisplayRedraw", error) }
         }
     }
 
@@ -105,7 +105,7 @@ struct MenuBrowserView: View {
                         if let action = partitioned.extraInfo {
                             Button {
                                 Task {
-                                    try? await viewModel.client.selectMenuItem(label: action.label)
+                                    do { try await viewModel.client.selectMenuItem(label: action.label) } catch { viewModel.report("selectMenuItem", error) }
                                 }
                             } label: {
                                 Image(systemName: "speaker.wave.2.circle.fill")
@@ -133,7 +133,7 @@ struct MenuBrowserView: View {
                         ForEach(partitioned.mainActions, id: \.key) { item in
                             Button {
                                 Task {
-                                    try? await viewModel.client.selectMenuItem(label: item.label)
+                                    do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
                                 }
                             } label: {
                                 HStack {
@@ -161,7 +161,7 @@ struct MenuBrowserView: View {
                 if partitioned.hasDismiss || partitioned.mainActions.isEmpty {
                     Button("Dismiss") {
                         Task {
-                            try? await viewModel.client.goBack()
+                            do { try await viewModel.client.goBack() } catch { viewModel.report("goBack", error) }
                         }
                     }
                     .buttonStyle(.bordered)

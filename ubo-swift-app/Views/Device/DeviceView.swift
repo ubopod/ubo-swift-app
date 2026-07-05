@@ -38,20 +38,8 @@ struct DeviceView: View {
                     HomeDeviceView(data: data)
                 case .menu(let data):
                     MenuDeviceView(data: data)
-                case .notification(let data):
-                    NotificationDeviceView(data: data)
-                case .application(let data):
-                    ApplicationDeviceView(data: data)
-                case .instruction(let data):
-                    InstructionDeviceView(data: data)
-                case .prompt(let data):
-                    PromptDeviceView(data: data)
-                case .render(let data):
-                    RenderDeviceView(data: data)
-                case .chat(let data):
-                    ChatDeviceView(data: data)
-                case .none:
-                    loadingView
+                default:
+                    StandardViewContent(view: viewModel.currentView)
                 }
             }
             .navigationTitle(splitLeadingGlyph(navigationTitle).label)
@@ -73,7 +61,7 @@ struct DeviceView: View {
                     if showBackButton {
                         Button {
                             triggerHaptic()
-                            Task { try? await viewModel.client.goBack() }
+                            viewModel.perform("goBack") { try await viewModel.client.goBack() }
                         } label: {
                             Image(systemName: "chevron.left")
                         }
@@ -83,7 +71,7 @@ struct DeviceView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         triggerHaptic()
-                        Task { try? await viewModel.client.goHome() }
+                        viewModel.perform("goHome") { try await viewModel.client.goHome() }
                     } label: {
                         Image(systemName: "house")
                     }
@@ -95,10 +83,10 @@ struct DeviceView: View {
                         triggerHaptic()
                         Task { await viewModel.toggleMicCapture() }
                     } label: {
-                        Image(systemName: viewModel.micCapture.isRunning ? "mic.fill" : "mic")
-                            .foregroundStyle(viewModel.micCapture.isRunning ? Color.red : Color.primary)
+                        Image(systemName: viewModel.isAssistantListening ? "mic.fill" : "mic")
+                            .foregroundStyle(viewModel.isAssistantListening ? Color.red : Color.primary)
                     }
-                    .accessibilityLabel(viewModel.micCapture.isRunning ? "Stop microphone" : "Start microphone")
+                    .accessibilityLabel(viewModel.isAssistantListening ? "Stop microphone" : "Start microphone")
                 }
                 #endif
             }
@@ -123,49 +111,11 @@ struct DeviceView: View {
     }
 
     private var navigationTitle: String {
-        switch viewModel.currentView {
-        case .home:
-            return "Home"
-        case .menu(let data):
-            return data.title.isEmpty ? "Menu" : data.title
-        case .notification:
-            return "Notification"
-        case .application(let data):
-            return data.applicationId
-        case .instruction(let data):
-            return data.title.isEmpty ? "Instruction" : data.title
-        case .prompt(let data):
-            return data.title.isEmpty ? "Prompt" : data.title
-        case .render(let data):
-            return data.title.isEmpty ? "Render" : data.title
-        case .chat:
-            return "Assistant"
-        case .none:
-            return "Device"
-        }
+        viewModel.currentView.uboTitle
     }
 
     private var showBackButton: Bool {
-        switch viewModel.currentView {
-        case .home:
-            return false
-        default:
-            return true
-        }
-    }
-
-    private var loadingView: some View {
-        VStack(spacing: 16) {
-            ProgressView()
-            Text("Loading...")
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private func triggerHaptic() {
-        #if os(iOS)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        #endif
+        viewModel.currentView.uboShowsBack
     }
 }
 
@@ -189,9 +139,9 @@ struct HomeDeviceView: View {
                                     let label = item.label.isEmpty
                                         ? item.key.prefix(1).uppercased() + item.key.dropFirst()
                                         : item.label
-                                    try? await viewModel.client.selectMenuItem(label: label)
+                                    do { try await viewModel.client.selectMenuItem(label: label) } catch { viewModel.report("selectMenuItem", error) }
                                 } else {
-                                    try? await viewModel.client.selectMenuItem(icon: item.icon)
+                                    do { try await viewModel.client.selectMenuItem(icon: item.icon) } catch { viewModel.report("selectMenuItem", error) }
                                 }
                             }
                         }
@@ -202,14 +152,8 @@ struct HomeDeviceView: View {
             .padding(.vertical)
         }
         .refreshable {
-            try? await viewModel.client.goHome()
+            do { try await viewModel.client.goHome() } catch { viewModel.report("goHome", error) }
         }
-    }
-
-    private func triggerHaptic() {
-        #if os(iOS)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        #endif
     }
 }
 
@@ -317,7 +261,7 @@ struct MenuDeviceView: View {
                     MenuItemRow(item: item) {
                         triggerHaptic()
                         Task {
-                            try? await viewModel.client.selectMenuItem(label: item.label)
+                            do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
                         }
                     }
                 }
@@ -327,14 +271,8 @@ struct MenuDeviceView: View {
         .listStyle(.insetGrouped)
         #endif
         .refreshable {
-            try? await viewModel.client.requestDisplayRedraw()
+            do { try await viewModel.client.requestDisplayRedraw() } catch { viewModel.report("requestDisplayRedraw", error) }
         }
-    }
-
-    private func triggerHaptic() {
-        #if os(iOS)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        #endif
     }
 }
 
@@ -381,7 +319,7 @@ struct NotificationDeviceView: View {
                             Button {
                                 triggerHaptic()
                                 Task {
-                                    try? await viewModel.client.selectMenuItem(label: action.label)
+                                    do { try await viewModel.client.selectMenuItem(label: action.label) } catch { viewModel.report("selectMenuItem", error) }
                                 }
                             } label: {
                                 Image(systemName: "speaker.wave.2.circle.fill")
@@ -410,7 +348,7 @@ struct NotificationDeviceView: View {
                             Button {
                                 triggerHaptic()
                                 Task {
-                                    try? await viewModel.client.selectMenuItem(label: item.label)
+                                    do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
                                 }
                             } label: {
                                 HStack {
@@ -438,7 +376,7 @@ struct NotificationDeviceView: View {
                 if partitioned.hasDismiss || partitioned.mainActions.isEmpty {
                     Button("Dismiss") {
                         triggerHaptic()
-                        Task { try? await viewModel.client.goBack() }
+                        viewModel.perform("goBack") { try await viewModel.client.goBack() }
                     }
                     .buttonStyle(.bordered)
                     .padding(.top)
@@ -457,12 +395,6 @@ struct NotificationDeviceView: View {
         case "update": return "arrow.down.circle.fill"
         default: return "bell.fill"
         }
-    }
-
-    private func triggerHaptic() {
-        #if os(iOS)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        #endif
     }
 }
 
@@ -493,11 +425,11 @@ struct ApplicationDeviceView: View {
             // Navigation controls for apps
             HStack(spacing: 40) {
                 ControlButton(icon: "chevron.left", label: "Back") {
-                    Task { try? await viewModel.client.goBack() }
+                    viewModel.perform("goBack") { try await viewModel.client.goBack() }
                 }
 
                 ControlButton(icon: "house", label: "Home") {
-                    Task { try? await viewModel.client.goHome() }
+                    viewModel.perform("goHome") { try await viewModel.client.goHome() }
                 }
             }
             .padding(.bottom, 32)
@@ -537,12 +469,6 @@ struct ControlButton: View {
                 .onChanged { _ in withAnimation(.easeInOut(duration: 0.1)) { isPressed = true } }
                 .onEnded { _ in withAnimation(.easeInOut(duration: 0.1)) { isPressed = false } }
         )
-        #endif
-    }
-
-    private func triggerHaptic() {
-        #if os(iOS)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
         #endif
     }
 }

@@ -40,7 +40,7 @@ struct WatchContentView: View {
         .task {
             // Auto-reconnect with saved settings on launch
             if hasCompletedOnboarding && !viewModel.isConnected && !viewModel.isConnecting && viewModel.hasSavedConnection {
-                try? await viewModel.connectWithSavedSettings()
+                do { try await viewModel.connectWithSavedSettings() } catch { viewModel.report("connectWithSavedSettings", error) }
             }
             hasAttemptedAutoConnect = true
         }
@@ -112,7 +112,7 @@ struct WatchConnectionView: View {
     private func connect() {
         let port = Int(portString) ?? 50051
         Task {
-            try? await viewModel.connect(host: host, port: port, useTLS: useTLS)
+            do { try await viewModel.connect(host: host, port: port, useTLS: useTLS) } catch { viewModel.report("connect", error) }
         }
     }
 }

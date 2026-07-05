@@ -175,10 +175,17 @@ public final class DeviceViewModel {
             do {
                 try await operation()
             } catch {
-                UboLog.action.error("\(label) failed: \(error.localizedDescription)")
-                self?.lastError = (error as? UboError) ?? .dispatchFailed(error)
+                self?.report(label, error)
             }
         }
+    }
+
+    /// Log a failed UI action and surface it via `lastError`. For contexts
+    /// that are already async (e.g. `.refreshable`) where `perform` would
+    /// detach: `do { try await ... } catch { viewModel.report("x", error) }`.
+    public func report(_ label: String, _ error: Error) {
+        UboLog.action.error("\(label) failed: \(error.localizedDescription)")
+        lastError = (error as? UboError) ?? .dispatchFailed(error)
     }
 
     // MARK: - Widget data

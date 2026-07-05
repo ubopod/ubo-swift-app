@@ -76,7 +76,7 @@ struct DeviceSettingsView: View {
         Section {
             Toggle("LEDs Enabled", isOn: $ledEnabled)
                 .onChange(of: ledEnabled) { _, newValue in
-                    Task { try? await viewModel.client.setLEDEnabled(newValue) }
+                    viewModel.perform("setLEDEnabled") { try await viewModel.client.setLEDEnabled(newValue) }
                 }
 
             VStack(alignment: .leading) {
@@ -84,7 +84,7 @@ struct DeviceSettingsView: View {
                 #if !os(tvOS)
                 Slider(value: $ledBrightness, in: 0...1) { editing in
                     if !editing {
-                        Task { try? await viewModel.client.setLEDBrightness(Float(ledBrightness)) }
+                        viewModel.perform("setLEDBrightness") { try await viewModel.client.setLEDBrightness(Float(ledBrightness)) }
                     }
                 }
                 #endif
@@ -92,25 +92,25 @@ struct DeviceSettingsView: View {
 
             HStack {
                 Button("Red") {
-                    Task { try? await viewModel.client.setLEDColor(.red) }
+                    viewModel.perform("setLEDColor") { try await viewModel.client.setLEDColor(.red) }
                 }
                 .buttonStyle(.bordered)
                 .tint(.red)
 
                 Button("Green") {
-                    Task { try? await viewModel.client.setLEDColor(.green) }
+                    viewModel.perform("setLEDColor") { try await viewModel.client.setLEDColor(.green) }
                 }
                 .buttonStyle(.bordered)
                 .tint(.green)
 
                 Button("Blue") {
-                    Task { try? await viewModel.client.setLEDColor(.blue) }
+                    viewModel.perform("setLEDColor") { try await viewModel.client.setLEDColor(.blue) }
                 }
                 .buttonStyle(.bordered)
                 .tint(.blue)
 
                 Button("Off") {
-                    Task { try? await viewModel.client.clearLEDs() }
+                    viewModel.perform("clearLEDs") { try await viewModel.client.clearLEDs() }
                 }
                 .buttonStyle(.bordered)
             }
@@ -130,17 +130,17 @@ struct DeviceSettingsView: View {
                 Text("Never").tag(DisplayBlankTimeout.off)
             }
             .onChange(of: displayTimeout) { _, newValue in
-                Task { try? await viewModel.client.setDisplayTimeout(newValue) }
+                viewModel.perform("setDisplayTimeout") { try await viewModel.client.setDisplayTimeout(newValue) }
             }
 
             HStack {
                 Button("Sleep Now") {
-                    Task { try? await viewModel.client.blankDisplay() }
+                    viewModel.perform("blankDisplay") { try await viewModel.client.blankDisplay() }
                 }
                 .buttonStyle(.bordered)
 
                 Button("Wake") {
-                    Task { try? await viewModel.client.unblankDisplay() }
+                    viewModel.perform("unblankDisplay") { try await viewModel.client.unblankDisplay() }
                 }
                 .buttonStyle(.bordered)
             }
@@ -168,7 +168,7 @@ struct DeviceSettingsView: View {
                     isEditingVolume = editing
                     if !editing {
                         let target = Float(volumeSlider)
-                        Task { try? await viewModel.client.setVolume(target) }
+                        viewModel.perform("setVolume") { try await viewModel.client.setVolume(target) }
                     }
                 }
                 #endif
@@ -188,13 +188,13 @@ struct DeviceSettingsView: View {
                 isOn: Binding(
                     get: { viewModel.cachedIsPlaybackMute ?? false },
                     set: { newValue in
-                        Task { try? await viewModel.client.setMute(newValue) }
+                        viewModel.perform("setMute") { try await viewModel.client.setMute(newValue) }
                     }
                 )
             )
 
             Button {
-                Task { try? await viewModel.client.playChime(.done) }
+                viewModel.perform("playChime") { try await viewModel.client.playChime(.done) }
             } label: {
                 Label("Play Test Chime", systemImage: "bell.fill")
             }
@@ -207,7 +207,7 @@ struct DeviceSettingsView: View {
                 isOn: Binding(
                     get: { viewModel.cachedIsCaptureMute ?? false },
                     set: { newValue in
-                        Task { try? await viewModel.client.setMute(newValue, device: .input) }
+                        viewModel.perform("setMute") { try await viewModel.client.setMute(newValue, device: .input) }
                     }
                 )
             ) {
@@ -270,9 +270,9 @@ struct DeviceSettingsView: View {
         Task {
             switch powerAction {
             case .reboot:
-                try? await viewModel.client.reboot()
+                do { try await viewModel.client.reboot() } catch { viewModel.report("reboot", error) }
             case .powerOff:
-                try? await viewModel.client.powerOff()
+                do { try await viewModel.client.powerOff() } catch { viewModel.report("powerOff", error) }
             case .none:
                 break
             }

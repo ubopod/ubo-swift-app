@@ -32,7 +32,7 @@ struct WatchChatView: View {
                     LazyVStack(spacing: 6) {
                         ForEach(data.bubbles) { bubble in
                             WatchChatBubbleRow(bubble: bubble) {
-                                Task { try? await viewModel.client.toggleChatAudio(messageId: bubble.messageId) }
+                                viewModel.perform("toggleChatAudio") { try await viewModel.client.toggleChatAudio(messageId: bubble.messageId) }
                             }
                             .id(bubble.messageId)
                         }
