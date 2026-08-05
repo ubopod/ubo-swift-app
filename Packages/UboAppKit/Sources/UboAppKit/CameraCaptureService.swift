@@ -95,7 +95,8 @@ public final class CameraCaptureService: NSObject {
 
     public func stop() {
         sessionQueue.async { [weak self] in
-            guard let self, self.isRunning else { return }
+            guard let self else { return }
+            guard self.isRunning else { return }
             self.captureSession.stopRunning()
 
             // Remove the input/output so a subsequent start() isn't left

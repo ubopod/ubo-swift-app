@@ -455,17 +455,20 @@ public final class DeviceViewModel {
         cameraObservationTask?.cancel()
         cameraObservationTask = Task { [weak self] in
             guard let self else { return }
-            var wasActive = false
 
-            // Observe client.isCameraViewfinderActive changes
+            // Diff against cameraManager.isActive (not a locally-tracked
+            // flag): the UI can stop the camera directly (overlay dismiss),
+            // which desyncs a local "last seen" flag from reality. start/stop
+            // are already idempotent, so re-driving off the real state keeps
+            // a repeated `true` emission able to restart a locally-stopped
+            // camera.
             for await isActive in self.client.$isCameraViewfinderActive.values {
                 guard !Task.isCancelled else { break }
-                if isActive && !wasActive {
+                if isActive {
                     self.cameraManager.startCamera()
-                } else if !isActive && wasActive {
+                } else {
                     self.cameraManager.stopCamera()
                 }
-                wasActive = isActive
             }
         }
     }
