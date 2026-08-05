@@ -11,11 +11,11 @@
 		3BD215172F3D4705001771F9 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD215162F3D4705001771F9 /* WidgetKit.framework */; };
 		3BD215192F3D4705001771F9 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3BD215182F3D4705001771F9 /* SwiftUI.framework */; };
 		3BD215262F3D4705001771F9 /* UboWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3BD215142F3D4705001771F9 /* UboWidgetsExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		3BUBOSWIFT0001 /* UboSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3BUBOSWIFT0002 /* UboSwift */; };
-		3BUBOSWIFT0003 /* UboSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3BUBOSWIFT0004 /* UboSwift */; };
 		3BUBOAPPKIT003 /* UboAppKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3BUBOAPPKIT002 /* UboAppKit */; };
 		3BUBOAPPKIT005 /* UboAppKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3BUBOAPPKIT004 /* UboAppKit */; };
 		3BUBOAPPKIT007 /* UboAppShared in Frameworks */ = {isa = PBXBuildFile; productRef = 3BUBOAPPKIT006 /* UboAppShared */; };
+		3BUBOSWIFT0001 /* UboSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3BUBOSWIFT0002 /* UboSwift */; };
+		3BUBOSWIFT0003 /* UboSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3BUBOSWIFT0004 /* UboSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -644,7 +644,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
@@ -683,7 +683,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
@@ -722,7 +722,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.getubo.ubo-Watch-AppTests";
@@ -745,7 +745,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.getubo.ubo-Watch-AppTests";
@@ -768,7 +768,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.getubo.ubo-Watch-AppUITests";
@@ -790,7 +790,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.getubo.ubo-Watch-AppUITests";
@@ -931,7 +931,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -986,7 +986,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -1038,7 +1038,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -1064,7 +1064,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -1089,7 +1089,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -1114,7 +1114,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
@@ -1142,7 +1142,7 @@
 				CODE_SIGN_ENTITLEMENTS = UboWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = UboWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = UboWidgets;
@@ -1176,7 +1176,7 @@
 				CODE_SIGN_ENTITLEMENTS = UboWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 98A45DRR2Y;
+				DEVELOPMENT_TEAM = WZQY49K84N;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = UboWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = UboWidgets;
@@ -1299,16 +1299,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		3BUBOSWIFT0002 /* UboSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3BUBOSWIFT0008 /* XCRemoteSwiftPackageReference "ubo-swift-grpc" */;
-			productName = UboSwift;
-		};
-		3BUBOSWIFT0004 /* UboSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3BUBOSWIFT0008 /* XCRemoteSwiftPackageReference "ubo-swift-grpc" */;
-			productName = UboSwift;
-		};
 		3BUBOAPPKIT002 /* UboAppKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 3BUBOAPPKIT001 /* XCLocalSwiftPackageReference "Packages/UboAppKit" */;
@@ -1323,6 +1313,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3BUBOAPPKIT001 /* XCLocalSwiftPackageReference "Packages/UboAppKit" */;
 			productName = UboAppShared;
+		};
+		3BUBOSWIFT0002 /* UboSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3BUBOSWIFT0008 /* XCRemoteSwiftPackageReference "ubo-swift-grpc" */;
+			productName = UboSwift;
+		};
+		3BUBOSWIFT0004 /* UboSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3BUBOSWIFT0008 /* XCRemoteSwiftPackageReference "ubo-swift-grpc" */;
+			productName = UboSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
