@@ -37,7 +37,7 @@ struct DashboardView: View {
                             await viewModel.disconnect()
                         }
                     } label: {
-                        Image(systemName: "wifi.slash")
+                        Image(systemName: "link")
                     }
                 }
             }
