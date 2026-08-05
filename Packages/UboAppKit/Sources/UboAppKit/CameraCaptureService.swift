@@ -73,6 +73,7 @@ public final class CameraCaptureService: NSObject {
     /// Position we're currently configured for (read on sessionQueue only).
     private var currentPosition: AVCaptureDevice.Position = .back
     private var currentInput: AVCaptureDeviceInput?
+    private var currentOutput: AVCaptureVideoDataOutput?
 
     override public init() {
         rgbBufferSize = UboConstants.cameraTargetSize * UboConstants.cameraTargetSize * 3
@@ -96,6 +97,22 @@ public final class CameraCaptureService: NSObject {
         sessionQueue.async { [weak self] in
             guard let self, self.isRunning else { return }
             self.captureSession.stopRunning()
+
+            // Remove the input/output so a subsequent start() isn't left
+            // trying to add fresh ones to a session that still has the old
+            // ones attached -- canAddInput() silently returns false in that
+            // case, leaving the session running with a stale configuration.
+            self.captureSession.beginConfiguration()
+            if let input = self.currentInput {
+                self.captureSession.removeInput(input)
+                self.currentInput = nil
+            }
+            if let output = self.currentOutput {
+                self.captureSession.removeOutput(output)
+                self.currentOutput = nil
+            }
+            self.captureSession.commitConfiguration()
+
             self.isRunning = false
         }
     }
@@ -184,6 +201,7 @@ public final class CameraCaptureService: NSObject {
 
         if captureSession.canAddOutput(output) {
             captureSession.addOutput(output)
+            currentOutput = output
         }
 
         captureSession.commitConfiguration()
