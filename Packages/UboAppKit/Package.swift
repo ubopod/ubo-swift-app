@@ -20,7 +20,7 @@ let package = Package(
         .library(name: "UboAppKit", targets: ["UboAppKit"]),
     ],
     dependencies: [
-        .package(path: "../../../ubo-swift-grpc"),
+        .package(url: "https://github.com/ubopod/ubo-swift-grpc.git", branch: "dev"),
     ],
     targets: [
         .target(name: "UboAppShared"),
