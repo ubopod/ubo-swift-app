@@ -7,7 +7,7 @@ public enum UboConstants {
     public static let defaultPort = 50051
 
     /// App Group identifier for sharing data between app and widget.
-    public static let appGroupIdentifier = "group.com.getubo.ubo-swift-app"
+    public static let appGroupIdentifier = "group.com.getubo.ubo-swift-app.shared"
 
     /// Minimum interval between widget data refreshes from the app.
     public static let widgetUpdateThrottle: TimeInterval = 5
