@@ -45,6 +45,9 @@ struct DeviceSettingsView: View {
                 // Power Controls
                 powerSection
 
+                // Wi-Fi Connection
+                wifiConnectionSection
+
                 // Disconnect
                 disconnectSection
             }
@@ -253,6 +256,18 @@ struct DeviceSettingsView: View {
             Text("Power")
         } footer: {
             Text("These actions will disconnect you from the device.")
+        }
+    }
+
+    private var wifiConnectionSection: some View {
+        Section {
+            NavigationLink("Generate QR Code") {
+                WiFiQRCodeGeneratorView()
+            }
+        } header: {
+            Text("Wi-Fi Connection")
+        } footer: {
+            Text("Generate a QR code with Wi-Fi credentials that the Ubo Pod's camera can scan to join a network.")
         }
     }
 
