@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-log.git",
       "state" : {
-        "revision" : "a878e7f8f46cfc0e1125e565b5c08e7d5272dc9a",
-        "version" : "1.14.0"
+        "revision" : "3ffafb9722d5d918c614feb496c8789a3b59d222",
+        "version" : "1.15.0"
       }
     },
     {
@@ -205,7 +205,7 @@
       "location" : "https://github.com/ubopod/ubo-swift-grpc.git",
       "state" : {
         "branch" : "dev",
-        "revision" : "5a4a8e4565453db0aa9f021e49196c5ffe416857"
+        "revision" : "93a0a21db0a5e4f6da57fa03674d660023b7962d"
       }
     }
   ],
