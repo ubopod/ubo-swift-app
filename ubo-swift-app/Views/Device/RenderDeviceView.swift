@@ -69,11 +69,26 @@ struct RenderDeviceView: View {
 struct QRCodeRenderView: View {
     let data: RenderViewData
 
-    private var payload: String {
-        if case .string(let s) = data.props["data"] { return s }
-        if case .string(let s) = data.props["url"] { return s }
-        if case .string(let s) = data.props["payload"] { return s }
+    /// The QR-encoded value. Every producer (tailscale/rpi-connect/vscode/
+    /// hermes setup services) sends this under `value` — never `data`,
+    /// `url`, or `payload`, which is what this used to check for.
+    private var value: String {
+        if case .string(let s) = data.props["value"] { return s }
         return ""
+    }
+
+    /// Tappable text under the QR, matching the Web UI's `QRCodePage`:
+    /// `label` if the producer set one, else the raw `value`.
+    private var label: String {
+        if case .string(let s) = data.props["label"], !s.isEmpty { return s }
+        return value
+    }
+
+    /// A code the user types after scanning (e.g. an OAuth device code) —
+    /// kept out of the link since it isn't part of it.
+    private var caption: String? {
+        if case .string(let s) = data.props["caption"], !s.isEmpty { return s }
+        return nil
     }
 
     var body: some View {
@@ -83,7 +98,7 @@ struct QRCodeRenderView: View {
                     .font(.headline)
             }
 
-            if let image = QRCodeImage.generate(from: payload) {
+            if let image = QRCodeImage.generate(from: value) {
                 image
                     .interpolation(.none)
                     .resizable()
@@ -97,11 +112,17 @@ struct QRCodeRenderView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Text(payload)
-                .font(.caption.monospaced())
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+            if !label.isEmpty {
+                LinkifiedText(text: label, font: .caption.monospaced())
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+
+            if let caption {
+                Text(caption)
+                    .font(.title3.monospaced().weight(.semibold))
+                    .tracking(1)
+            }
         }
         .padding()
     }
@@ -111,16 +132,20 @@ struct QRCodeCarouselRenderView: View {
     let data: RenderViewData
     @State private var index: Int = 0
 
-    private var payloads: [String] {
-        if case .list(let values) = data.props["items"] {
-            return values.compactMap {
-                if case .string(let s) = $0 { return s } else { return nil }
-            }
+    /// Parallel arrays, matching the Web UI's `QRCodeCarousel`: `values`
+    /// are the QR-encoded strings, `labels` the (optionally shorter) text
+    /// shown under each one — never `items`/`urls`, which no producer
+    /// (the Docker port carousel is the only one) has ever sent.
+    private var values: [String] {
+        if case .list(let items) = data.props["values"] {
+            return items.compactMap { if case .string(let s) = $0 { return s } else { return nil } }
         }
-        if case .list(let values) = data.props["urls"] {
-            return values.compactMap {
-                if case .string(let s) = $0 { return s } else { return nil }
-            }
+        return []
+    }
+
+    private var labels: [String] {
+        if case .list(let items) = data.props["labels"] {
+            return items.compactMap { if case .string(let s) = $0 { return s } else { return nil } }
         }
         return []
     }
@@ -130,14 +155,15 @@ struct QRCodeCarouselRenderView: View {
             if !data.title.isEmpty {
                 markupText(data.title).font(.headline)
             }
-            if payloads.isEmpty {
+            if values.isEmpty {
                 Text("No QR payloads")
                     .foregroundStyle(.secondary)
             } else {
                 TabView(selection: $index) {
-                    ForEach(Array(payloads.enumerated()), id: \.offset) { (i, payload) in
+                    ForEach(Array(values.enumerated()), id: \.offset) { (i, value) in
+                        let label = (i < labels.count && !labels[i].isEmpty) ? labels[i] : value
                         VStack {
-                            if let image = QRCodeImage.generate(from: payload) {
+                            if let image = QRCodeImage.generate(from: value) {
                                 image
                                     .interpolation(.none)
                                     .resizable()
@@ -147,9 +173,7 @@ struct QRCodeCarouselRenderView: View {
                                     .background(.white)
                                     .cornerRadius(12)
                             }
-                            Text(payload)
-                                .font(.caption.monospaced())
-                                .foregroundStyle(.secondary)
+                            LinkifiedText(text: label, font: .caption.monospaced())
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
                         }
