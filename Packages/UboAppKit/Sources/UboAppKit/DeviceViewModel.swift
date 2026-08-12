@@ -57,6 +57,13 @@ public final class DeviceViewModel {
     public private(set) var cachedIsPlaybackMute: Bool?
     public private(set) var cachedIsCaptureMute: Bool?
 
+    /// Full stats snapshot (disk, network, uptime, weather, date, Docker
+    /// apps, sensor devices) for the Dashboard tile grid. The flattened
+    /// `cached*`/`cpuPercent`/`ramPercent`/`temperature` properties above
+    /// stay in place for other call sites (status bars, widgets) that only
+    /// need those three scalars.
+    public private(set) var cachedStats: SystemStats?
+
     private var cancellables = Set<AnyCancellable>()
     #if os(iOS) || os(macOS)
     private var cameraObservationTask: Task<Void, Never>?
@@ -159,6 +166,7 @@ public final class DeviceViewModel {
                     self?.cachedPlaybackVolume = stats.playbackVolume
                     self?.cachedIsPlaybackMute = stats.isPlaybackMute
                     self?.cachedIsCaptureMute = stats.isCaptureMute
+                    self?.cachedStats = stats
                     self?.updateWidgetData()
                 }
             }
@@ -249,6 +257,12 @@ public final class DeviceViewModel {
 
     public var temperature: Float? {
         cachedTemperature
+    }
+
+    /// Full stats snapshot for the Dashboard tile grid. `nil` until the
+    /// first `SubscribeStore` frame arrives.
+    public var stats: SystemStats? {
+        cachedStats
     }
 
     // MARK: - Menu view data helpers
