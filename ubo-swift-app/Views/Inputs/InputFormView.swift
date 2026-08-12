@@ -7,6 +7,13 @@
 //  type maps to its native control; on submit the form dispatches
 //  `InputProvideAction`, on cancel it dispatches `InputCancelAction`.
 //
+//  `prompt` is the primary heading and `title` an optional elaboration
+//  shown below it — matching the Web UI's `Inputs` component (`prompt` ->
+//  `DialogTitle`, `title` -> linkified subtitle), not the field names'
+//  intuitive-looking-but-wrong opposite reading. Getting this backwards
+//  previously sent a several-hundred-character OAuth URL straight into
+//  `.navigationTitle`, where it silently truncated to "Open https://...".
+//
 
 import UboAppKit
 import SwiftUI
@@ -32,11 +39,9 @@ struct InputFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                if let prompt = description.prompt, !prompt.isEmpty {
+                if let subtitle = description.title, !subtitle.isEmpty {
                     Section {
-                        Text(prompt)
-                            .font(.body)
-                            .foregroundStyle(.secondary)
+                        LinkifiedText(text: subtitle)
                     }
                 }
 
@@ -53,12 +58,12 @@ struct InputFormView: View {
                         }
                     } footer: {
                         if let hint = field.description, !hint.isEmpty {
-                            Text(hint)
+                            LinkifiedText(text: hint, font: .caption)
                         }
                     }
                 }
             }
-            .navigationTitle(description.title ?? "Input")
+            .navigationTitle(description.prompt ?? "Input")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
