@@ -31,6 +31,15 @@ struct WatchRenderView: View {
                 WatchStatusView(text: extractString("text", "status", "message"), title: data.title, icon: extractString("icon"))
             case .frameStream:
                 WatchFrameStream(streamId: data.streamId, title: data.title)
+            case .readings:
+                WatchReadingsView(
+                    labels: extractList("labels"),
+                    values: extractList("values"),
+                    units: extractList("units"),
+                    keys: extractList("keys"),
+                    deviceClasses: extractList("device_classes"),
+                    title: data.title
+                )
             case .unknown(let raw):
                 Text("Unknown kind: \(raw)").font(.caption2).foregroundStyle(.secondary)
             }
@@ -249,6 +258,64 @@ private struct WatchFrameStream: View {
             await task?.value
         }
         .onDisappear { task?.cancel(); task = nil }
+    }
+}
+
+private struct WatchReadingsView: View {
+    let labels: [String]
+    let values: [String]
+    let units: [String]
+    let keys: [String]
+    let deviceClasses: [String]
+    let title: String
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 8) {
+                if !title.isEmpty {
+                    markupText(title).font(.caption).fontWeight(.semibold)
+                }
+                if labels.isEmpty {
+                    Text("No readings yet").font(.caption2).foregroundStyle(.secondary)
+                } else {
+                    ForEach(labels.indices, id: \.self) { index in
+                        row(at: index)
+                    }
+                }
+            }
+            .padding(.horizontal, 6)
+        }
+    }
+
+    @ViewBuilder
+    private func row(at index: Int) -> some View {
+        let label = labels[index]
+        let value = index < values.count ? values[index] : ""
+        let unit = index < units.count ? units[index] : ""
+        let key = index < keys.count ? keys[index] : ""
+        let deviceClass = index < deviceClasses.count && !deviceClasses[index].isEmpty ? deviceClasses[index] : nil
+        let spec = WatchSensorDisplay.spec(forKey: key, deviceClass: deviceClass)
+
+        if let range = spec.range, let floatValue = Float(value) {
+            WatchCompactGauge(
+                fraction: WatchSensorDisplay.rangeFraction(floatValue, range: range),
+                valueText: value,
+                label: label,
+                color: .blue
+            )
+        } else {
+            HStack(spacing: 6) {
+                Image(systemName: spec.icon)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text(label)
+                    .font(.caption2)
+                    .lineLimit(1)
+                Spacer(minLength: 2)
+                Text(value + (unit.isEmpty ? "" : " \(unit)"))
+                    .font(.caption2.weight(.semibold))
+            }
+        }
     }
 }
 
