@@ -2,10 +2,9 @@
 //  RenderDeviceView.swift
 //  ubo-swift-app
 //
-//  Renders the seven sub-kinds of `RenderViewData` (qr_code,
-//  qr_code_carousel, text_viewer, image_viewer, status, frame_stream)
-//  emitted by the Python core. Mirrors the Web UI's RenderView sub-kind
-//  switch.
+//  Renders the sub-kinds of `RenderViewData` (qr_code, qr_code_carousel,
+//  text_viewer, image_viewer, status, frame_stream, readings) emitted by
+//  the Python core. Mirrors the Web UI's RenderView sub-kind switch.
 //
 
 import UboAppKit
@@ -43,6 +42,8 @@ struct RenderDeviceView: View {
                 StatusRenderView(data: data)
             case .frameStream:
                 FrameStreamRenderView(streamId: data.streamId, title: data.title)
+            case .readings:
+                ReadingsRenderView(data: data)
             case .unknown(let raw):
                 UnknownKindView(kind: raw, data: data)
             }
@@ -278,6 +279,133 @@ struct ImageViewerRenderView: View {
         .onDisappear {
             streamTask?.cancel()
             streamTask = nil
+        }
+    }
+}
+
+// MARK: - Readings
+
+/// A sensor's live readings — one row of `label: value unit` per entity.
+/// Entities with a natural range (per `SensorDisplay`, keyed by the same
+/// Home Assistant `device_class` the Dashboard's sensor tiles use) render
+/// as a grid of `DashboardGauge`s; the rest render as plain stat rows,
+/// since a meter implies a limit and inventing one for a boundless reading
+/// (a VOC index, a gas resistance) would be a lie.
+struct ReadingsRenderView: View {
+    let data: RenderViewData
+
+    private struct Row: Identifiable {
+        let id: Int
+        let label: String
+        let value: String
+        let unit: String?
+        let spec: SensorDisplaySpec
+        /// The parsed numeric value, only when `spec.range` also exists —
+        /// both are required to plot a gauge fraction.
+        let meteredValue: Float?
+    }
+
+    private var rows: [Row] {
+        let labels = data.stringListProp("labels")
+        let values = data.stringListProp("values")
+        let units = data.stringListProp("units")
+        let keys = data.stringListProp("keys")
+        let deviceClasses = data.stringListProp("device_classes")
+        return labels.indices.map { index in
+            let value = index < values.count ? values[index] : ""
+            let unit = index < units.count ? units[index] : ""
+            let key = index < keys.count ? keys[index] : ""
+            let deviceClass = index < deviceClasses.count && !deviceClasses[index].isEmpty
+                ? deviceClasses[index] : nil
+            let spec = SensorDisplay.spec(forKey: key, deviceClass: deviceClass)
+            return Row(
+                id: index,
+                label: labels[index],
+                value: value,
+                unit: unit.isEmpty ? nil : unit,
+                spec: spec,
+                meteredValue: spec.range != nil ? Float(value) : nil
+            )
+        }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                if !data.title.isEmpty {
+                    markupText(data.title)
+                        .font(.title2.bold())
+                }
+
+                let allRows = rows
+                if allRows.isEmpty {
+                    Text("No readings yet")
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 40)
+                } else {
+                    let metered = allRows.filter { $0.meteredValue != nil }
+                    let plain = allRows.filter { $0.meteredValue == nil }
+
+                    if !metered.isEmpty {
+                        VStack(spacing: 16) {
+                            ForEach(Array(metered.chunked(into: 3).enumerated()), id: \.offset) { _, row in
+                                HStack(spacing: 16) {
+                                    ForEach(row) { gaugeTile($0) }
+                                    if row.count < 3 { Spacer(minLength: 0) }
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+
+                    if !plain.isEmpty {
+                        VStack(spacing: 4) {
+                            ForEach(plain) { row in
+                                DashboardStat(label: row.label, value: row.value, unit: row.unit, icon: row.spec.icon)
+                            }
+                        }
+                        .padding()
+                        .background {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.regularMaterial)
+                        }
+                        .padding(.horizontal)
+                    }
+                }
+            }
+            .padding(.vertical)
+        }
+    }
+
+    @ViewBuilder
+    private func gaugeTile(_ row: Row) -> some View {
+        // meteredValue is non-nil only when spec.range is too (see `rows`).
+        if let range = row.spec.range, let value = row.meteredValue {
+            VStack(spacing: 6) {
+                DashboardGauge(
+                    fraction: SensorDisplay.rangeFraction(value, range: range),
+                    valueText: row.value,
+                    unit: row.unit,
+                    icon: row.spec.icon,
+                    color: DashboardColor.gaugeAccent
+                )
+                .frame(width: 90, height: 90)
+                Text(row.label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+    }
+}
+
+private extension RenderViewData {
+    /// Pull a list-of-strings prop (`labels`/`values`/`units`/`keys`/
+    /// `device_classes`), matching the server's `RenderProps` shape.
+    func stringListProp(_ key: String) -> [String] {
+        guard case .list(let items)? = props[key] else { return [] }
+        return items.compactMap {
+            if case .string(let s) = $0 { return s } else { return nil }
         }
     }
 }
