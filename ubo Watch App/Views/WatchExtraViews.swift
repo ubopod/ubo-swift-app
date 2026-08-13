@@ -26,7 +26,7 @@ struct WatchRenderView: View {
             case .textViewer:
                 WatchTextViewer(text: extractString("text", "content", "body"), title: data.title)
             case .imageViewer:
-                WatchImageViewer(data: extractBytes("data", "image"), title: data.title)
+                WatchImageViewer(streamId: data.streamId, title: data.title)
             case .status:
                 WatchStatusView(text: extractString("text", "status", "message"), title: data.title, icon: extractString("icon"))
             case .frameStream:
@@ -42,13 +42,6 @@ struct WatchRenderView: View {
             if case .string(let s) = data.props[key] { return s }
         }
         return ""
-    }
-
-    private func extractBytes(_ keys: String...) -> Data? {
-        for key in keys {
-            if case .bytes(let d) = data.props[key] { return d }
-        }
-        return nil
     }
 
     private func extractList(_ keys: String...) -> [String] {
@@ -146,25 +139,48 @@ private struct WatchTextViewer: View {
 }
 
 private struct WatchImageViewer: View {
-    let data: Data?
+    let streamId: String
     let title: String
+    @Environment(DeviceViewModel.self) private var viewModel
+    @State private var image: UIImage?
+    @State private var task: Task<Void, Never>?
 
+    // Props carry only geometry — the pixels arrive as frame-stream events,
+    // exactly like WatchFrameStream, so an image inline in props doesn't put
+    // a multi-megabyte payload on the store stream. Mirrors the iOS
+    // ImageViewerRenderView / Web UI's ImageViewer.
     var body: some View {
         ScrollView {
             VStack(spacing: 6) {
                 if !title.isEmpty {
                     markupText(title).font(.caption).fontWeight(.semibold)
                 }
-                if let bytes = data, let image = UIImage(data: bytes) {
+                if let image {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                 } else {
-                    Text("No image").font(.caption2).foregroundStyle(.secondary)
+                    ProgressView()
                 }
             }
             .padding(.horizontal, 6)
         }
+        .task(id: streamId) {
+            task?.cancel()
+            task = Task { @MainActor in
+                let stream = await viewModel.client.frameStream(streamId: streamId)
+                do {
+                    for try await frame in stream {
+                        if Task.isCancelled { break }
+                        if let img = WatchRGBDecoder.image(from: frame.data, width: frame.width, height: frame.height) {
+                            image = img
+                        }
+                    }
+                } catch {}
+            }
+            await task?.value
+        }
+        .onDisappear { task?.cancel(); task = nil }
     }
 }
 
