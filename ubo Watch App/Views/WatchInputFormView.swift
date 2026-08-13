@@ -114,6 +114,8 @@ struct WatchInputFormView: View {
         let scalar = description.fields.first.flatMap { values[$0.name] } ?? ""
         UboLog.input.info("submitting input \(description.id) with scalar=\"\(scalar)\"")
         onClose()
-        do { try await viewModel.client.provideInput(id: description.id, value: scalar) } catch { viewModel.report("provideInput", error) }
+        do {
+            try await viewModel.client.provideInput(id: description.id, value: scalar, data: values)
+        } catch { viewModel.report("provideInput", error) }
     }
 }

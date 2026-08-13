@@ -135,13 +135,14 @@ struct InputFormView: View {
 
         // Web UI's contract: `value` carries the primary scalar (first field's
         // value if there's only one), and structured `result.data` carries
-        // the full map. The Python core inspects `value` first; for now we
-        // pass the first field's value as the scalar — multi-field forms
-        // rely on the Web UI's encoding, which we don't replicate yet.
+        // every field's name -> value. Server-side handlers for multi-field
+        // forms read `result.data`, not `value`.
         let scalar = description.fields.first.flatMap { values[$0.name] } ?? ""
         UboLog.input.info("submitting input \(description.id) with scalar=\"\(scalar)\"")
         onClose()
-        do { try await viewModel.client.provideInput(id: description.id, value: scalar) } catch { viewModel.report("provideInput", error) }
+        do {
+            try await viewModel.client.provideInput(id: description.id, value: scalar, data: values)
+        } catch { viewModel.report("provideInput", error) }
     }
 }
 
