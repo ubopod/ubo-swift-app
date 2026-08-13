@@ -225,40 +225,60 @@ struct TextViewerRenderView: View {
 
 struct ImageViewerRenderView: View {
     let data: RenderViewData
+    @Environment(DeviceViewModel.self) private var viewModel
+    @State private var currentImage: PlatformImage?
+    @State private var streamTask: Task<Void, Never>?
 
-    private var imageData: Data? {
-        if case .bytes(let d) = data.props["data"] { return d }
-        if case .bytes(let d) = data.props["image"] { return d }
-        if case .string(let b64) = data.props["data_base64"] {
-            return Data(base64Encoded: b64)
-        }
-        return nil
-    }
-
+    // Props carry only the geometry (width/height, unused here since the
+    // image is shown at its natural size) — the pixels arrive as
+    // frame-stream events, exactly like FrameStreamRenderView, so an image
+    // inline in props doesn't put a multi-megabyte payload on the store
+    // stream that every client (including MCU ones) would have to swallow.
+    // Mirrors the Web UI's `ImageViewer` component.
     var body: some View {
         VStack(spacing: 12) {
             if !data.title.isEmpty {
                 markupText(data.title).font(.headline)
             }
-            if let bytes = imageData,
-               let uiImage = PlatformImage(data: bytes) {
+            if let image = currentImage {
                 #if os(macOS)
-                Image(nsImage: uiImage)
+                Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(maxWidth: .infinity)
                 #else
-                Image(uiImage: uiImage)
+                Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(maxWidth: .infinity)
                 #endif
             } else {
-                Text("No image data")
-                    .foregroundStyle(.secondary)
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: 200)
             }
         }
         .padding()
+        .task(id: data.streamId) {
+            streamTask?.cancel()
+            streamTask = Task { @MainActor in
+                let stream = await viewModel.client.frameStream(streamId: data.streamId)
+                do {
+                    for try await frame in stream {
+                        if Task.isCancelled { break }
+                        if let image = RGBFrameDecoder.image(from: frame.data, width: frame.width, height: frame.height) {
+                            currentImage = image
+                        }
+                    }
+                } catch {
+                    // Stream ended; UI will keep last frame.
+                }
+            }
+            await streamTask?.value
+        }
+        .onDisappear {
+            streamTask?.cancel()
+            streamTask = nil
+        }
     }
 }
 
