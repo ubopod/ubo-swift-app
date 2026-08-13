@@ -173,6 +173,36 @@ public final class DeviceViewModel {
             .store(in: &cancellables)
     }
 
+    // MARK: - Menu item activation
+
+    /// Prefix the core auto-generates for a SubMenuItem's "push this menu"
+    /// action_id (`menu:select:<menuKey>`). These ids are never registered in
+    /// the server's action registry — `ExecuteMenuActionAction` can't resolve
+    /// them — so they must be turned into a direct `StackPushMenuAction`
+    /// client-side instead. Mirrors the Web UI's identical branch in
+    /// `action-dispatcher.ts`/`TileGrid.tsx`.
+    private static let menuSelectPrefix = "menu:select:"
+
+    /// Activate a selected `MenuItemData` the way the Web UI does: push
+    /// directly for `menu:select:*` ids, execute-by-id otherwise (passing
+    /// the item's `key` as `menuKey` so handlers that return a submenu still
+    /// navigate into it), and fall back to the legacy by-label lookup only
+    /// when the server sent no action_id at all. Every UI surface that
+    /// renders `MenuItemData` should call this instead of hand-rolling the
+    /// branch — see PromptDeviceView's Remove-does-nothing bug for what
+    /// skipping the menu:select: case looks like.
+    public func selectMenuItem(_ item: MenuItemData) async throws {
+        if let actionId = item.actionId, !actionId.isEmpty {
+            if actionId.hasPrefix(Self.menuSelectPrefix) {
+                try await client.pushMenu(menuKey: String(actionId.dropFirst(Self.menuSelectPrefix.count)))
+            } else {
+                try await client.executeMenuAction(actionId: actionId, menuKey: item.key)
+            }
+        } else {
+            try await client.selectMenuItem(label: item.label)
+        }
+    }
+
     // MARK: - Error surfacing
 
     /// Run a fire-and-forget UI action, logging failures and surfacing them

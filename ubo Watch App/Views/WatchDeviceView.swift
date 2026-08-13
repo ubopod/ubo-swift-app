@@ -162,12 +162,16 @@ struct WatchHomeView: View {
             ForEach(data.menuItems, id: \.key) { item in
                 Button {
                     Task {
-                        // Use key for selection if icon is empty
-                        if item.icon.isEmpty {
-                            do { try await viewModel.client.selectMenuItem(label: displayLabel(for: item)) } catch { viewModel.report("selectMenuItem", error) }
-                        } else {
-                            do { try await viewModel.client.selectMenuItem(icon: item.icon) } catch { viewModel.report("selectMenuItem", error) }
-                        }
+                        do {
+                            if item.actionId?.isEmpty == false {
+                                try await viewModel.selectMenuItem(item)
+                            } else if item.icon.isEmpty {
+                                // Use key for selection if icon is empty
+                                try await viewModel.client.selectMenuItem(label: displayLabel(for: item))
+                            } else {
+                                try await viewModel.client.selectMenuItem(icon: item.icon)
+                            }
+                        } catch { viewModel.report("selectMenuItem", error) }
                     }
                 } label: {
                     HStack(spacing: 8) {
@@ -236,7 +240,7 @@ struct WatchMenuView: View {
             ForEach(data.items.compactMap { $0 }, id: \.key) { item in
                 Button {
                     Task {
-                        do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
+                        do { try await viewModel.selectMenuItem(item) } catch { viewModel.report("selectMenuItem", error) }
                     }
                 } label: {
                     WatchMenuItemRow(item: item)
@@ -307,7 +311,7 @@ struct WatchNotificationView: View {
                 if let extra = partitioned.extraInfo {
                     Button {
                         Task {
-                            do { try await viewModel.client.selectMenuItem(label: extra.label) } catch { viewModel.report("selectMenuItem", error) }
+                            do { try await viewModel.selectMenuItem(extra) } catch { viewModel.report("selectMenuItem", error) }
                         }
                     } label: {
                         Label("Read Aloud", systemImage: "speaker.wave.2.circle.fill")
@@ -321,7 +325,7 @@ struct WatchNotificationView: View {
                     ForEach(partitioned.mainActions, id: \.key) { item in
                         Button {
                             Task {
-                                do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
+                                do { try await viewModel.selectMenuItem(item) } catch { viewModel.report("selectMenuItem", error) }
                             }
                         } label: {
                             markupText(item.label)

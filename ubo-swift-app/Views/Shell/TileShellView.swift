@@ -218,7 +218,9 @@ struct TileShellView: View {
             ? item.key.prefix(1).uppercased() + item.key.dropFirst()
             : item.label
         dispatch {
-            if item.icon.isEmpty {
+            if item.actionId?.isEmpty == false {
+                try await viewModel.selectMenuItem(item)
+            } else if item.icon.isEmpty {
                 try await viewModel.client.selectMenuItem(label: label)
             } else {
                 try await viewModel.client.selectMenuItem(icon: item.icon)

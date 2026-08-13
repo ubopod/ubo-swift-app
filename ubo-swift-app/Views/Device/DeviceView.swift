@@ -134,15 +134,19 @@ struct HomeDeviceView: View {
                         HomeMenuCard(item: item) {
                             triggerHaptic()
                             Task {
-                                // Use key/label for selection if icon is empty
-                                if item.icon.isEmpty {
-                                    let label = item.label.isEmpty
-                                        ? item.key.prefix(1).uppercased() + item.key.dropFirst()
-                                        : item.label
-                                    do { try await viewModel.client.selectMenuItem(label: label) } catch { viewModel.report("selectMenuItem", error) }
-                                } else {
-                                    do { try await viewModel.client.selectMenuItem(icon: item.icon) } catch { viewModel.report("selectMenuItem", error) }
-                                }
+                                do {
+                                    if item.actionId?.isEmpty == false {
+                                        try await viewModel.selectMenuItem(item)
+                                    } else if item.icon.isEmpty {
+                                        // Use key/label for selection if icon is empty
+                                        let label = item.label.isEmpty
+                                            ? item.key.prefix(1).uppercased() + item.key.dropFirst()
+                                            : item.label
+                                        try await viewModel.client.selectMenuItem(label: label)
+                                    } else {
+                                        try await viewModel.client.selectMenuItem(icon: item.icon)
+                                    }
+                                } catch { viewModel.report("selectMenuItem", error) }
                             }
                         }
                     }
@@ -261,7 +265,7 @@ struct MenuDeviceView: View {
                     MenuItemRow(item: item) {
                         triggerHaptic()
                         Task {
-                            do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
+                            do { try await viewModel.selectMenuItem(item) } catch { viewModel.report("selectMenuItem", error) }
                         }
                     }
                 }
@@ -319,7 +323,7 @@ struct NotificationDeviceView: View {
                             Button {
                                 triggerHaptic()
                                 Task {
-                                    do { try await viewModel.client.selectMenuItem(label: action.label) } catch { viewModel.report("selectMenuItem", error) }
+                                    do { try await viewModel.selectMenuItem(action) } catch { viewModel.report("selectMenuItem", error) }
                                 }
                             } label: {
                                 Image(systemName: "speaker.wave.2.circle.fill")
@@ -348,7 +352,7 @@ struct NotificationDeviceView: View {
                             Button {
                                 triggerHaptic()
                                 Task {
-                                    do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
+                                    do { try await viewModel.selectMenuItem(item) } catch { viewModel.report("selectMenuItem", error) }
                                 }
                             } label: {
                                 HStack {
