@@ -50,7 +50,7 @@ struct PromptDeviceView: View {
                         Button {
                             triggerHaptic()
                             Task {
-                                do { try await viewModel.client.selectMenuItem(label: item.label) } catch { viewModel.report("selectMenuItem", error) }
+                                do { try await viewModel.selectMenuItem(item) } catch { viewModel.report("selectMenuItem", error) }
                             }
                         } label: {
                             markupText(item.label.isEmpty ? item.key : item.label)

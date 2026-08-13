@@ -324,7 +324,7 @@ struct WatchPromptView: View {
                 } else {
                     ForEach(data.items, id: \.key) { item in
                         Button {
-                            viewModel.perform("selectMenuItem") { try await viewModel.client.selectMenuItem(label: item.label) }
+                            viewModel.perform("selectMenuItem") { try await viewModel.selectMenuItem(item) }
                         } label: {
                             markupText(item.label.isEmpty ? item.key : item.label)
                                 .font(.caption2)
