@@ -35,6 +35,9 @@ struct InputFormView: View {
     @State private var values: [String: String] = [:]
     @State private var validationErrors: [String: String] = [:]
     @State private var isSubmitting: Bool = false
+    /// FILE fields picked but not yet uploaded, keyed by field name. Sent in
+    /// the background after submit — see `submit()`.
+    @State private var pendingUploads: [String: PendingUpload] = [:]
 
     var body: some View {
         NavigationStack {
@@ -50,7 +53,8 @@ struct InputFormView: View {
                         InputFieldEditor(
                             field: field,
                             value: binding(for: field),
-                            error: validationErrors[field.name]
+                            error: validationErrors[field.name],
+                            onFilePicked: { pendingUploads[field.name] = $0 }
                         )
                     } header: {
                         if !field.label.isEmpty {
@@ -137,12 +141,34 @@ struct InputFormView: View {
         // value if there's only one), and structured `result.data` carries
         // every field's name -> value. Server-side handlers for multi-field
         // forms read `result.data`, not `value`.
-        let scalar = description.fields.first.flatMap { values[$0.name] } ?? ""
+        var data = values
+        // FILE fields: the server never sees the bytes through `data` — it
+        // reads `{field}_upload_id`/`{field}_name` and waits for a matching
+        // chunked upload (started below) to complete. Mirrors the Web UI's
+        // `inputs.tsx`.
+        for (fieldName, pending) in pendingUploads {
+            data["\(fieldName)_upload_id"] = pending.uploadId
+            data["\(fieldName)_name"] = pending.filename
+        }
+        let scalar = description.fields.first.flatMap { data[$0.name] } ?? ""
         UboLog.input.info("submitting input \(description.id) with scalar=\"\(scalar)\"")
         onClose()
         do {
-            try await viewModel.client.provideInput(id: description.id, value: scalar, data: values)
-        } catch { viewModel.report("provideInput", error) }
+            try await viewModel.client.provideInput(id: description.id, value: scalar, data: data)
+        } catch {
+            viewModel.report("provideInput", error)
+            return
+        }
+        // Uploads run after the form has been accepted, same as the Web UI —
+        // the server's await_completed_upload has its own timeout to cover
+        // this arriving after the InputProvideAction that references it.
+        for pending in pendingUploads.values {
+            Task {
+                do {
+                    try await viewModel.client.uploadFile(id: pending.uploadId, filename: pending.filename, data: pending.data)
+                } catch { viewModel.report("uploadFile", error) }
+            }
+        }
     }
 }
 
@@ -150,6 +176,7 @@ private struct InputFieldEditor: View {
     let field: InputFieldDescription
     @Binding var value: String
     let error: String?
+    let onFilePicked: (PendingUpload) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -214,7 +241,7 @@ private struct InputFieldEditor: View {
                     .foregroundStyle(.secondary)
                 #endif
             case .file:
-                FilePickerButton(field: field, value: $value)
+                FilePickerButton(field: field, value: $value, onFilePicked: onFilePicked)
             case .date:
                 #if os(tvOS)
                 TextField(field.label, text: $value)
@@ -252,12 +279,23 @@ private struct InputFieldEditor: View {
     }
 }
 
+/// A FILE field picked and read into memory, ready to hand to
+/// `UboClient.uploadFile`. `uploadId` is generated on pick (not on submit)
+/// so it's stable if the user re-opens the picker before submitting.
+struct PendingUpload {
+    let uploadId: String
+    let filename: String
+    let data: Data
+}
+
 private struct FilePickerButton: View {
     let field: InputFieldDescription
     @Binding var value: String
+    let onFilePicked: (PendingUpload) -> Void
 
     #if os(iOS)
     @State private var isPickerPresented = false
+    @State private var readError: String?
     #endif
 
     var body: some View {
@@ -273,6 +311,11 @@ private struct FilePickerButton: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            if let readError {
+                Text(readError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
         }
         .fileImporter(
             isPresented: $isPickerPresented,
@@ -281,11 +324,16 @@ private struct FilePickerButton: View {
         ) { result in
             switch result {
             case .success(let urls):
-                if let url = urls.first {
-                    // For now we only carry the file path/name. Chunked
-                    // upload via InputResult.files is a TODO that mirrors
-                    // the Web UI's 512 KB / 3-retry contract.
-                    value = url.lastPathComponent
+                guard let url = urls.first else { return }
+                readError = nil
+                Task {
+                    let filename = url.lastPathComponent
+                    guard let data = await readFileData(at: url) else {
+                        readError = "Couldn't read that file."
+                        return
+                    }
+                    value = filename
+                    onFilePicked(PendingUpload(uploadId: UUID().uuidString, filename: filename, data: data))
                 }
             case .failure:
                 break
@@ -295,6 +343,17 @@ private struct FilePickerButton: View {
         TextField(field.label, text: $value)
         #endif
     }
+}
+
+/// Reads `url`'s contents off the main actor so a large picked file (e.g. a
+/// multi-MB wake-word model) doesn't stall the UI. Security-scoped access
+/// only needs to be held while the read itself runs.
+private func readFileData(at url: URL) async -> Data? {
+    await Task.detached(priority: .userInitiated) {
+        let didAccess = url.startAccessingSecurityScopedResource()
+        defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
+        return try? Data(contentsOf: url)
+    }.value
 }
 
 private let isoDateFormatter: DateFormatter = {
