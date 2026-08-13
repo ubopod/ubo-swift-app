@@ -164,8 +164,18 @@ struct InputFormView: View {
         // this arriving after the InputProvideAction that references it.
         for pending in pendingUploads.values {
             Task {
+                // Security-scoped access was started when the file was
+                // picked and deliberately held open until now — it's a
+                // process-wide, reference-counted grant (not tied to this
+                // view's lifetime), so it's still valid even though the
+                // sheet closed several await-points ago.
+                defer { pending.url.stopAccessingSecurityScopedResource() }
                 do {
-                    try await viewModel.client.uploadFile(id: pending.uploadId, filename: pending.filename, data: pending.data)
+                    let handle = try FileHandle(forReadingFrom: pending.url)
+                    defer { try? handle.close() }
+                    try await viewModel.client.uploadFile(id: pending.uploadId, filename: pending.filename, totalSize: pending.size) { length in
+                        try handle.read(upToCount: length) ?? Data()
+                    }
                 } catch { viewModel.report("uploadFile", error) }
             }
         }
@@ -279,13 +289,21 @@ private struct InputFieldEditor: View {
     }
 }
 
-/// A FILE field picked and read into memory, ready to hand to
-/// `UboClient.uploadFile`. `uploadId` is generated on pick (not on submit)
-/// so it's stable if the user re-opens the picker before submitting.
+/// A FILE field picked but not yet uploaded. `uploadId` is generated on
+/// pick (not on submit) so it's stable if the user re-opens the picker
+/// before submitting. The bytes are never buffered in memory here — a
+/// picked video can run to hundreds of MB, and loading that into a single
+/// `Data` up front risks an OOM (which is exactly what "Couldn't read that
+/// file" used to mean). `submit()` opens `url` for a chunked read instead.
+///
+/// `url`'s security-scoped access is already started by the time this is
+/// constructed, and stays started until the upload finishes — see
+/// `submit()`.
 struct PendingUpload {
     let uploadId: String
     let filename: String
-    let data: Data
+    let size: Int
+    let url: URL
 }
 
 private struct FilePickerButton: View {
@@ -326,15 +344,21 @@ private struct FilePickerButton: View {
             case .success(let urls):
                 guard let url = urls.first else { return }
                 readError = nil
-                Task {
-                    let filename = url.lastPathComponent
-                    guard let data = await readFileData(at: url) else {
-                        readError = "Couldn't read that file."
-                        return
-                    }
-                    value = filename
-                    onFilePicked(PendingUpload(uploadId: UUID().uuidString, filename: filename, data: data))
+                // Reference-counted and process-wide (not tied to this
+                // view), so it's safe to keep started well past this
+                // picker callback — see PendingUpload / submit().
+                guard url.startAccessingSecurityScopedResource() else {
+                    readError = "Couldn't access that file."
+                    return
                 }
+                guard let size = try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > 0 else {
+                    url.stopAccessingSecurityScopedResource()
+                    readError = "Couldn't read that file."
+                    return
+                }
+                let filename = url.lastPathComponent
+                value = filename
+                onFilePicked(PendingUpload(uploadId: UUID().uuidString, filename: filename, size: size, url: url))
             case .failure:
                 break
             }
@@ -343,17 +367,6 @@ private struct FilePickerButton: View {
         TextField(field.label, text: $value)
         #endif
     }
-}
-
-/// Reads `url`'s contents off the main actor so a large picked file (e.g. a
-/// multi-MB wake-word model) doesn't stall the UI. Security-scoped access
-/// only needs to be held while the read itself runs.
-private func readFileData(at url: URL) async -> Data? {
-    await Task.detached(priority: .userInitiated) {
-        let didAccess = url.startAccessingSecurityScopedResource()
-        defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
-        return try? Data(contentsOf: url)
-    }.value
 }
 
 private let isoDateFormatter: DateFormatter = {
