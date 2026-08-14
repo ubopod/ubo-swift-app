@@ -43,7 +43,7 @@ struct WatchSensorPage: View {
     @ViewBuilder
     private func entityRow(_ entity: SensorEntityReading) -> some View {
         let spec = WatchSensorDisplay.spec(forKey: entity.key, deviceClass: entity.deviceClass)
-        let valueText = WatchSensorDisplay.reading(entity.value, precision: entity.precision)
+        let valueText = WatchSensorDisplay.reading(entity.displayValue ?? entity.value, precision: entity.precision)
 
         if let range = spec.range, let value = entity.value {
             HStack(spacing: 6) {
@@ -63,7 +63,7 @@ struct WatchSensorPage: View {
                     .font(.caption2)
                     .lineLimit(1)
                 Spacer(minLength: 2)
-                Text(valueText + (entity.unit.map { " \($0)" } ?? ""))
+                Text(valueText + ((entity.displayUnit ?? entity.unit).map { " \($0)" } ?? ""))
                     .font(.caption2.weight(.semibold))
             }
         }

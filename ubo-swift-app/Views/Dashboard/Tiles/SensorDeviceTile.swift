@@ -54,13 +54,17 @@ struct SensorDeviceTile: View {
     @ViewBuilder
     private func gauge(_ entity: SensorEntityReading) -> some View {
         let spec = SensorDisplay.spec(forKey: entity.key, deviceClass: entity.deviceClass)
-        let valueText = DashboardFormat.reading(entity.value, precision: entity.precision)
+        // `fraction` is computed against the raw (Celsius/metric) value and
+        // SensorDisplay's Celsius/metric-scaled range table — the gauge fill
+        // percentage doesn't depend on which unit the text shows. The text
+        // itself uses the server-converted display value/unit.
+        let valueText = DashboardFormat.reading(entity.displayValue ?? entity.value, precision: entity.precision)
         VStack(spacing: 4) {
             if let range = spec.range, let value = entity.value {
                 DashboardGauge(
                     fraction: SensorDisplay.rangeFraction(value, range: range),
                     valueText: valueText,
-                    unit: entity.unit,
+                    unit: entity.displayUnit ?? entity.unit,
                     icon: spec.icon,
                     color: DashboardColor.gaugeAccent
                 )
@@ -75,7 +79,12 @@ struct SensorDeviceTile: View {
 
     private func statRow(_ entity: SensorEntityReading) -> some View {
         let spec = SensorDisplay.spec(forKey: entity.key, deviceClass: entity.deviceClass)
-        let valueText = DashboardFormat.reading(entity.value, precision: entity.precision)
-        return DashboardStat(label: entity.name ?? entity.key, value: valueText, unit: entity.unit, icon: spec.icon)
+        let valueText = DashboardFormat.reading(entity.displayValue ?? entity.value, precision: entity.precision)
+        return DashboardStat(
+            label: entity.name ?? entity.key,
+            value: valueText,
+            unit: entity.displayUnit ?? entity.unit,
+            icon: spec.icon
+        )
     }
 }
