@@ -108,19 +108,26 @@ struct ConnectionView: View {
                     .disabled(host.isEmpty || viewModel.isConnecting)
                     .padding(.horizontal)
 
-                    // Discovered devices (Bonjour)
-                    if !discovered.isEmpty {
-                        VStack(spacing: 12) {
-                            HStack {
-                                Image(systemName: "wifi")
-                                    .font(.subheadline)
-                                    .foregroundStyle(Color.accentColor)
-                                Text("Found on network")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                            }
+                    // Discovered devices (Bonjour) — always shown, with a
+                    // "searching" placeholder when empty, so there's a visual
+                    // sign discovery is running (mirrors ConnectionScreen.kt).
+                    VStack(spacing: 12) {
+                        HStack {
+                            Image(systemName: "wifi")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.accentColor)
+                            Text("Found on network")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
 
+                        if discovered.isEmpty {
+                            Text("Searching… make sure your phone and Ubo device are on the same Wi-Fi network.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
                             ForEach(Array(discovered).sorted(by: { $0.name < $1.name }), id: \.self) { device in
                                 Button {
                                     host = device.host
@@ -136,7 +143,7 @@ struct ConnectionView: View {
                                         VStack(alignment: .leading) {
                                             Text(device.name)
                                                 .font(.body.weight(.medium))
-                                            Text("\(device.host):\(device.port)")
+                                            Text("\(device.host):\(String(device.port))")
                                                 .font(.caption.monospaced())
                                                 .foregroundStyle(.secondary)
                                         }
@@ -154,8 +161,8 @@ struct ConnectionView: View {
                                 .buttonStyle(.plain)
                             }
                         }
-                        .padding(.horizontal)
                     }
+                    .padding(.horizontal)
 
                     // Recent Connections (up to 3)
                     if !viewModel.recentConnections.isEmpty {
@@ -180,7 +187,7 @@ struct ConnectionView: View {
                                         VStack(alignment: .leading) {
                                             Text(recent.host)
                                                 .font(.body.weight(.medium))
-                                            Text("Port \(recent.port)\(recent.useTLS ? " · TLS" : "")")
+                                            Text("Port \(String(recent.port))\(recent.useTLS ? " · TLS" : "")")
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
                                         }
