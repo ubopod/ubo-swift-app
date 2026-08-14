@@ -22,14 +22,19 @@ struct CompactSensorTile: View {
 
     var body: some View {
         let spec = SensorDisplay.spec(forKey: entity.key, deviceClass: entity.deviceClass)
-        let valueText = DashboardFormat.reading(entity.value, precision: entity.precision)
+        // `fraction` is computed against the raw (Celsius/metric) value and
+        // SensorDisplay's Celsius/metric-scaled range table — the gauge fill
+        // percentage doesn't depend on which unit the text shows. The text
+        // itself uses the server-converted display value/unit.
+        let valueText = DashboardFormat.reading(entity.displayValue ?? entity.value, precision: entity.precision)
+        let displayUnit = entity.displayUnit ?? entity.unit
 
         VStack(spacing: 4) {
             if let range = spec.range, let value = entity.value {
                 DashboardGauge(
                     fraction: SensorDisplay.rangeFraction(value, range: range),
                     valueText: valueText,
-                    unit: entity.unit,
+                    unit: displayUnit,
                     icon: spec.icon,
                     color: DashboardColor.gaugeAccent
                 )
@@ -40,7 +45,7 @@ struct CompactSensorTile: View {
                     .foregroundStyle(.secondary)
                 Text(valueText)
                     .font(.title3.weight(.semibold))
-                if let unit = entity.unit {
+                if let unit = displayUnit {
                     Text(unit)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
