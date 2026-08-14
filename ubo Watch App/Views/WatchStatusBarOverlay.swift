@@ -15,6 +15,7 @@ struct WatchStatusBarOverlay: View {
     let cpuPercent: Float
     let ramPercent: Float
     let temperature: Float?
+    let temperatureUnit: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -34,7 +35,7 @@ struct WatchStatusBarOverlay: View {
                 if let temp = temperature {
                     HStack(spacing: 2) {
                         Image(systemName: "thermometer.medium")
-                        Text("\(Int(temp))°")
+                        Text("\(Int(temp))\(temperatureUnit ?? "°")")
                             .lineLimit(1)
                             .fixedSize()
                     }

@@ -35,7 +35,7 @@ struct WatchWeatherDateTimePage: View {
                         Image(systemName: WatchWeatherIcon.symbolName(for: weather.symbolCode))
                             .font(.title3)
                             .symbolRenderingMode(.multicolor)
-                        Text("\(Int(weather.temperatureCelsius.rounded()))°C")
+                        Text("\(Int(weather.temperatureDisplayValue.rounded()))\(weather.temperatureDisplayUnit)")
                             .font(.title3.weight(.semibold))
                     }
                     Text(WatchWeatherIcon.phrase(for: weather.symbolCode))
