@@ -255,8 +255,13 @@ extension CameraCaptureService: AVCaptureVideoDataOutputSampleBufferDelegate {
         // Scale factor from cropped region to target
         let scale = Double(cropSize) / Double(targetSize)
 
-        // Convert BGRA to RGB with center-crop and resize
-        var dstOffset = 0
+        // Convert BGRA to RGB with center-crop, resize, and a 90° clockwise
+        // rotation — AVCaptureVideoDataOutput delivers frames in the
+        // sensor's native (landscape) orientation with no auto-rotation
+        // (that's a Preview-layer-only behavior), so the back camera comes
+        // out sideways in portrait use without this. The crop is already
+        // square, so rotation is just remapping the write index, not a
+        // dimension swap.
         for y in 0..<targetSize {
             let srcY = cropY + Int(Double(y) * scale)
             let rowBase = srcY * bytesPerRow
@@ -265,10 +270,13 @@ extension CameraCaptureService: AVCaptureVideoDataOutputSampleBufferDelegate {
                 let srcX = cropX + Int(Double(x) * scale)
                 let srcOffset = rowBase + srcX * 4
 
+                let outRow = x
+                let outCol = targetSize - 1 - y
+                let dstOffset = (outRow * targetSize + outCol) * 3
+
                 rgbBuffer[dstOffset] = srcData[srcOffset + 2]     // R (from BGRA)
                 rgbBuffer[dstOffset + 1] = srcData[srcOffset + 1] // G
                 rgbBuffer[dstOffset + 2] = srcData[srcOffset]     // B
-                dstOffset += 3
             }
         }
 
