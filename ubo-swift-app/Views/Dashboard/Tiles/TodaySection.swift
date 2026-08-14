@@ -70,7 +70,7 @@ struct TodaySection: View {
                     Image(systemName: WeatherIcon.symbolName(for: weather.symbolCode))
                         .font(.system(size: 28))
                         .symbolRenderingMode(.multicolor)
-                    Text("\(Int(weather.temperatureCelsius.rounded()))°C")
+                    Text("\(Int(weather.temperatureDisplayValue.rounded()))\(weather.temperatureDisplayUnit)")
                         .font(.title2.weight(.semibold))
                 }
                 Text(WeatherIcon.phrase(for: weather.symbolCode))

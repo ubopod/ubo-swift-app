@@ -9,6 +9,26 @@ import UboAppShared
 import WidgetKit
 import SwiftUI
 
+// MARK: - Temperature helpers
+
+/// `stats.temperature` is already converted to the device's effective unit
+/// system server-side (see `ubo_app/utils/units.py`); the "hot"/"warm"
+/// thresholds below need to move with it, since 70/50 only mean anything in
+/// Celsius. Shared by every widget size's temperature gauge/color.
+private func temperatureColor(_ temp: Float, unit: String?) -> Color {
+    let (hot, warm): (Float, Float) = unit == "°F" ? (158, 122) : (70, 50)
+    if temp > hot { return .red }
+    if temp > warm { return .orange }
+    return .green
+}
+
+/// A 0-1 gauge fraction for a temperature reading, scaled so "hot" (per
+/// `temperatureColor`) lands near the top of the gauge regardless of unit.
+private func temperatureFraction(_ temp: Float, unit: String?) -> Double {
+    let hot: Float = unit == "°F" ? 158 : 70
+    return Double(max(0, min(temp / hot, 1)))
+}
+
 // MARK: - Timeline Provider
 
 struct SystemStatusProvider: TimelineProvider {
@@ -91,7 +111,7 @@ struct SmallWidgetView: View {
                 StatRow(icon: "cpu", label: "CPU", value: stats.cpuPercent, color: cpuColor)
                 StatRow(icon: "memorychip", label: "RAM", value: stats.ramPercent, color: ramColor)
                 if let temp = stats.temperature {
-                    TempRow(temperature: temp, color: tempColor)
+                    TempRow(temperature: temp, unit: stats.temperatureUnit, color: tempColor)
                 }
             }
         }
@@ -113,9 +133,7 @@ struct SmallWidgetView: View {
 
     private var tempColor: Color {
         guard let temp = stats.temperature else { return .gray }
-        if temp > 70 { return .red }
-        if temp > 50 { return .orange }
-        return .green
+        return temperatureColor(temp, unit: stats.temperatureUnit)
     }
 }
 
@@ -142,6 +160,7 @@ struct StatRow: View {
 
 struct TempRow: View {
     let temperature: Float
+    let unit: String?
     let color: Color
 
     var body: some View {
@@ -151,7 +170,7 @@ struct TempRow: View {
                 .foregroundStyle(color)
                 .frame(width: 14)
 
-            Text(String(format: "%.0f°C", temperature))
+            Text("\(String(format: "%.0f", temperature))\(unit ?? "°C")")
                 .font(.caption)
                 .fontWeight(.medium)
                 .monospacedDigit()
@@ -171,7 +190,7 @@ struct MediumWidgetView: View {
                 GaugeView(value: Double(stats.cpuPercent) / 100, label: "CPU", icon: "cpu", color: cpuColor)
                 GaugeView(value: Double(stats.ramPercent) / 100, label: "RAM", icon: "memorychip", color: ramColor)
                 if let temp = stats.temperature {
-                    GaugeView(value: Double(temp) / 100, label: "Temp", icon: "thermometer", color: tempColor, displayValue: String(format: "%.0f°", temp))
+                    GaugeView(value: temperatureFraction(temp, unit: stats.temperatureUnit), label: "Temp", icon: "thermometer", color: tempColor, displayValue: "\(String(format: "%.0f", temp))\(stats.temperatureUnit ?? "°C")")
                 }
             }
 
@@ -218,9 +237,7 @@ struct MediumWidgetView: View {
 
     private var tempColor: Color {
         guard let temp = stats.temperature else { return .gray }
-        if temp > 70 { return .red }
-        if temp > 50 { return .orange }
-        return .green
+        return temperatureColor(temp, unit: stats.temperatureUnit)
     }
 }
 
@@ -288,7 +305,7 @@ struct LargeWidgetView: View {
                 LargeGaugeView(value: Double(stats.cpuPercent) / 100, label: "CPU", icon: "cpu", color: cpuColor)
                 LargeGaugeView(value: Double(stats.ramPercent) / 100, label: "RAM", icon: "memorychip", color: ramColor)
                 if let temp = stats.temperature {
-                    LargeGaugeView(value: Double(temp) / 100, label: "Temperature", icon: "thermometer", color: tempColor, displayValue: String(format: "%.1f°C", temp))
+                    LargeGaugeView(value: temperatureFraction(temp, unit: stats.temperatureUnit), label: "Temperature", icon: "thermometer", color: tempColor, displayValue: "\(String(format: "%.1f", temp))\(stats.temperatureUnit ?? "°C")")
                 }
             }
             .frame(maxWidth: .infinity)
@@ -321,9 +338,7 @@ struct LargeWidgetView: View {
 
     private var tempColor: Color {
         guard let temp = stats.temperature else { return .gray }
-        if temp > 70 { return .red }
-        if temp > 50 { return .orange }
-        return .green
+        return temperatureColor(temp, unit: stats.temperatureUnit)
     }
 }
 
@@ -398,7 +413,7 @@ struct AccessoryRectangularView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Label("Temp", systemImage: "thermometer")
                         .font(.caption2)
-                    Text(String(format: "%.0f°", temp))
+                    Text("\(String(format: "%.0f", temp))\(stats.temperatureUnit ?? "°C")")
                         .font(.caption)
                         .fontWeight(.semibold)
                 }
@@ -412,7 +427,7 @@ struct AccessoryInlineView: View {
 
     var body: some View {
         if let temp = stats.temperature {
-            Text("CPU \(Int(stats.cpuPercent))% | RAM \(Int(stats.ramPercent))% | \(Int(temp))°C")
+            Text("CPU \(Int(stats.cpuPercent))% | RAM \(Int(stats.ramPercent))% | \(Int(temp))\(stats.temperatureUnit ?? "°C")")
         } else {
             Text("CPU \(Int(stats.cpuPercent))% | RAM \(Int(stats.ramPercent))%")
         }

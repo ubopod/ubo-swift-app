@@ -53,6 +53,7 @@ public final class DeviceViewModel {
     public private(set) var cachedCpuPercent: Float = 0
     public private(set) var cachedRamPercent: Float = 0
     public private(set) var cachedTemperature: Float?
+    public private(set) var cachedTemperatureUnit: String?
     public private(set) var cachedPlaybackVolume: Float?
     public private(set) var cachedIsPlaybackMute: Bool?
     public private(set) var cachedIsCaptureMute: Bool?
@@ -162,7 +163,8 @@ public final class DeviceViewModel {
                 if let stats = stats {
                     self?.cachedCpuPercent = stats.cpuPercent
                     self?.cachedRamPercent = stats.ramPercent
-                    self?.cachedTemperature = stats.temperature
+                    self?.cachedTemperature = stats.temperatureDisplayValue ?? stats.temperature
+                    self?.cachedTemperatureUnit = stats.temperatureDisplayUnit
                     self?.cachedPlaybackVolume = stats.playbackVolume
                     self?.cachedIsPlaybackMute = stats.isPlaybackMute
                     self?.cachedIsCaptureMute = stats.isCaptureMute
@@ -242,6 +244,7 @@ public final class DeviceViewModel {
             cpuPercent: cachedCpuPercent,
             ramPercent: cachedRamPercent,
             temperature: cachedTemperature,
+            temperatureUnit: cachedTemperatureUnit,
             isConnected: isConnected,
             deviceHost: savedHost
         )
@@ -287,6 +290,10 @@ public final class DeviceViewModel {
 
     public var temperature: Float? {
         cachedTemperature
+    }
+
+    public var temperatureUnit: String? {
+        cachedTemperatureUnit
     }
 
     /// Full stats snapshot for the Dashboard tile grid. `nil` until the

@@ -13,6 +13,7 @@ struct SystemSection: View {
     let cpuPercent: Float
     let ramPercent: Float
     let temperature: Float?
+    let temperatureUnit: String?
     let diskPercent: Float?
     let diskUsedBytes: Int64?
     let diskTotalBytes: Int64?
@@ -71,7 +72,7 @@ struct SystemSection: View {
 
                 VStack(spacing: 8) {
                     if let temperature {
-                        DashboardStat(label: "Temperature", value: String(format: "%.1f", temperature), unit: "°C", icon: "thermometer")
+                        DashboardStat(label: "Temperature", value: String(format: "%.1f", temperature), unit: temperatureUnit ?? "°C", icon: "thermometer")
                     }
                     if let diskUsedBytes, let diskTotalBytes, diskTotalBytes > 0 {
                         DashboardStat(

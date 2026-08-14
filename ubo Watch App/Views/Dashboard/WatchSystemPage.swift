@@ -46,10 +46,13 @@ struct WatchSystemPage: View {
                     }
                 }
 
-                if let temperature = stats.temperature {
-                    Label(String(format: "%.1f°C", temperature), systemImage: "thermometer")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                if let temperature = stats.temperatureDisplayValue ?? stats.temperature {
+                    Label(
+                        "\(String(format: "%.1f", temperature))\(stats.temperatureDisplayUnit ?? "°C")",
+                        systemImage: "thermometer"
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 }
 
                 if let bootTime = stats.bootTime, bootTime > 0 {

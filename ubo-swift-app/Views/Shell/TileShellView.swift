@@ -51,7 +51,8 @@ struct TileShellView: View {
                     bar: viewModel.statusBar,
                     cpuPercent: viewModel.cpuPercent,
                     ramPercent: viewModel.ramPercent,
-                    temperature: viewModel.temperature
+                    temperature: viewModel.temperature,
+                    temperatureUnit: viewModel.temperatureUnit
                 )
             }
 

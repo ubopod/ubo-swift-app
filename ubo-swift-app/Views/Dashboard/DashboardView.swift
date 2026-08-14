@@ -61,7 +61,8 @@ struct DashboardView: View {
                         SystemSection(
                             cpuPercent: stats.cpuPercent,
                             ramPercent: stats.ramPercent,
-                            temperature: stats.temperature,
+                            temperature: stats.temperatureDisplayValue ?? stats.temperature,
+                            temperatureUnit: stats.temperatureDisplayUnit,
                             diskPercent: stats.diskPercent,
                             diskUsedBytes: stats.diskUsedBytes,
                             diskTotalBytes: stats.diskTotalBytes,

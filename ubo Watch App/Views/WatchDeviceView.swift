@@ -28,7 +28,8 @@ struct WatchDeviceView: View {
                     bar: viewModel.statusBar,
                     cpuPercent: viewModel.cpuPercent,
                     ramPercent: viewModel.ramPercent,
-                    temperature: viewModel.temperature
+                    temperature: viewModel.temperature,
+                    temperatureUnit: viewModel.temperatureUnit
                 )
             }
             // Header with title and nav buttons
