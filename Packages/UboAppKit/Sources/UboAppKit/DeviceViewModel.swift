@@ -278,6 +278,32 @@ public final class DeviceViewModel {
         !savedHost.isEmpty
     }
 
+    /// The last 3 distinct (host, port) pairs connected to, most recent
+    /// first — lets a user who controls more than one pod switch between
+    /// them without re-typing host/port/TLS each time.
+    public var recentConnections: [RecentConnection] {
+        get {
+            guard let data = UserDefaults.standard.data(forKey: "recentConnections"),
+                  let decoded = try? JSONDecoder().decode([RecentConnection].self, from: data)
+            else { return [] }
+            return decoded
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(Array(newValue.prefix(3))) else { return }
+            UserDefaults.standard.set(data, forKey: "recentConnections")
+        }
+    }
+
+    /// Move (or insert) `host:port` to the front of `recentConnections`,
+    /// refreshing its TLS setting to whatever was just used, and trims back
+    /// down to 3.
+    private func recordRecentConnection(host: String, port: Int, useTLS: Bool) {
+        var connections = recentConnections
+        connections.removeAll { $0.host == host && $0.port == port }
+        connections.insert(RecentConnection(host: host, port: port, useTLS: useTLS), at: 0)
+        recentConnections = connections
+    }
+
     // MARK: - System stats helpers (cached so stats persist across menus)
 
     public var cpuPercent: Float {
@@ -334,6 +360,7 @@ public final class DeviceViewModel {
         savedHost = host
         savedPort = port
         savedUseTLS = useTLS
+        recordRecentConnection(host: host, port: port, useTLS: useTLS)
         try await client.connect(
             host: host,
             port: port,

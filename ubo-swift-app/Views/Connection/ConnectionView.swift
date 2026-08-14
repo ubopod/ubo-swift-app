@@ -157,49 +157,91 @@ struct ConnectionView: View {
                         .padding(.horizontal)
                     }
 
-                    // Recent Connection
-                    if !viewModel.savedHost.isEmpty && viewModel.savedHost != host {
+                    // Recent Connections (up to 3)
+                    if !viewModel.recentConnections.isEmpty {
                         VStack(spacing: 12) {
-                            Text("Recent")
+                            Text("Recent Connections")
                                 .font(.subheadline.weight(.medium))
                                 .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                            Button {
-                                host = viewModel.savedHost
-                                portString = String(viewModel.savedPort)
-                                useTLS = viewModel.savedUseTLS
-                                connect()
-                            } label: {
-                                HStack {
-                                    Image(systemName: "clock.arrow.circlepath")
-                                        .font(.title3)
-                                        .foregroundStyle(Color.accentColor)
+                            ForEach(viewModel.recentConnections) { recent in
+                                Button {
+                                    host = recent.host
+                                    portString = String(recent.port)
+                                    useTLS = recent.useTLS
+                                    connect()
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "clock.arrow.circlepath")
+                                            .font(.title3)
+                                            .foregroundStyle(Color.accentColor)
 
-                                    VStack(alignment: .leading) {
-                                        Text(viewModel.savedHost)
-                                            .font(.body.weight(.medium))
-                                        Text("Port \(viewModel.savedPort)")
+                                        VStack(alignment: .leading) {
+                                            Text(recent.host)
+                                                .font(.body.weight(.medium))
+                                            Text("Port \(recent.port)\(recent.useTLS ? " · TLS" : "")")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+
+                                        Spacer()
+
+                                        Image(systemName: "chevron.right")
                                             .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(.tertiary)
                                     }
-
-                                    Spacer()
-
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption)
-                                        .foregroundStyle(.tertiary)
+                                    .padding()
+                                    .background {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(.regularMaterial)
+                                    }
                                 }
-                                .padding()
-                                .background {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(.regularMaterial)
-                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                         .padding(.horizontal)
                     }
+
+                    // Setting up a brand new Ubo: it isn't on any network yet,
+                    // so this has to work before any connection exists.
+                    VStack(spacing: 12) {
+                        Text("New Device Setup")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        NavigationLink {
+                            WiFiQRCodeGeneratorView()
+                        } label: {
+                            HStack {
+                                Image(systemName: "qrcode")
+                                    .font(.title3)
+                                    .foregroundStyle(Color.accentColor)
+
+                                VStack(alignment: .leading) {
+                                    Text("Set up a new Ubo's Wi-Fi")
+                                        .font(.body.weight(.medium))
+                                    Text("Generate a QR code for the pod's camera to scan.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .padding()
+                            .background {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(.regularMaterial)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal)
 
                     Spacer(minLength: 100)
                 }
