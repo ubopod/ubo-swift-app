@@ -17,8 +17,8 @@ struct ContentView: View {
 
     private enum Tab: Hashable { case dashboard, device, settings }
 
-    /// The onboarding carousel is phone-oriented (it even describes the
-    /// on-phone D-pad), so tvOS skips straight to the connection screen.
+    /// The onboarding carousel is phone-oriented (it covers screen mirroring
+    /// and WiFi QR onboarding), so tvOS skips straight to the connection screen.
     private var needsOnboarding: Bool {
         #if os(tvOS)
         false
