@@ -108,6 +108,9 @@ struct ConnectionView: View {
                     .disabled(host.isEmpty || viewModel.isConnecting)
                     .padding(.horizontal)
 
+                    Link("Order UboPod", destination: URL(string: "https://shop.getubo.com/products/ubo-pro-4-and-5")!)
+                        .font(.subheadline.weight(.medium))
+
                     // Discovered devices (Bonjour) — always shown, with a
                     // "searching" placeholder when empty, so there's a visual
                     // sign discovery is running (mirrors ConnectionScreen.kt).

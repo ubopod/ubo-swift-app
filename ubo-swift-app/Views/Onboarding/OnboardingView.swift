@@ -16,22 +16,31 @@ struct OnboardingView: View {
         OnboardingPage(
             icon: "antenna.radiowaves.left.and.right",
             title: "Welcome to Ubo",
-            description: "Control your Ubo device from anywhere on your network."
+            description: "Your Ubo Pod, made mobile. Connect to monitor, control, and interact with your device from anywhere on the network or remotely."
         ),
         OnboardingPage(
             icon: "gauge.with.dots.needle.bottom.50percent",
-            title: "Live Dashboard",
-            description: "Monitor CPU, RAM, and volume in real-time with live updates."
+            title: "See it at a glance",
+            description: "Track full application and system stats (CPU, Memory, Storage, etc), and sensor readings in real time."
         ),
         OnboardingPage(
             icon: "list.bullet",
-            title: "Browse Menus",
-            description: "Navigate your device's menus and settings with native iOS controls."
+            title: "Your Pod's screen, on your phone",
+            description: "Browse menus, respond to prompts, and chat with the on-device assistant — all mirrored live from your Ubo."
         ),
         OnboardingPage(
-            icon: "gamecontroller",
-            title: "Remote Control",
-            description: "Use the virtual D-pad to control your device from your phone or watch."
+            icon: "qrcode",
+            title: "WiFi onboarding made easy",
+            description: "Create a WiFi QR code to pass credentials to your Ubo Pod in a single step."
+        ),
+        OnboardingPage(
+            icon: "cart",
+            title: "Don't have a Ubo yet?",
+            description: "Get a ready-to-go UboPod, or deploy the software only version yourself on a Raspberry Pi.",
+            links: [
+                OnboardingLink(title: "Order a UboPod", url: URL(string: "https://shop.getubo.com/products/ubo-pro-4-and-5")!),
+                OnboardingLink(title: "Set up on Raspberry Pi", url: URL(string: "https://github.com/ubopod/ubo_app/releases")!)
+            ]
         )
     ]
 
@@ -92,6 +101,13 @@ struct OnboardingPage {
     let icon: String
     let title: String
     let description: String
+    var links: [OnboardingLink] = []
+}
+
+struct OnboardingLink: Identifiable {
+    let id = UUID()
+    let title: String
+    let url: URL
 }
 
 struct OnboardingPageView: View {
@@ -116,6 +132,24 @@ struct OnboardingPageView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
+
+            if !page.links.isEmpty {
+                VStack(spacing: 12) {
+                    ForEach(page.links) { link in
+                        Link(destination: link.url) {
+                            Text(link.title)
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color.accentColor.opacity(0.15))
+                                .foregroundStyle(Color.accentColor)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
+                }
+                .padding(.horizontal, 32)
+                .padding(.top, 8)
+            }
 
             Spacer()
             Spacer()
