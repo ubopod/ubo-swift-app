@@ -9,8 +9,6 @@
 
 import UboAppKit
 import SwiftUI
-import CoreImage
-import CoreImage.CIFilterBuiltins
 import UboSwift
 
 struct RenderDeviceView: View {
@@ -546,31 +544,6 @@ struct UnknownKindView: View {
 }
 
 // MARK: - Helpers
-
-enum QRCodeImage {
-    static func generate(from string: String) -> Image? {
-        guard !string.isEmpty else { return nil }
-        let context = CIContext()
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(string.utf8)
-        guard let output = filter.outputImage else { return nil }
-        let scaled = output.transformed(by: CGAffineTransform(scaleX: 8, y: 8))
-        guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else {
-            return nil
-        }
-        #if os(iOS)
-        return Image(uiImage: UIImage(cgImage: cgImage))
-        #elseif os(macOS)
-        let size = NSSize(width: cgImage.width, height: cgImage.height)
-        let rep = NSBitmapImageRep(cgImage: cgImage)
-        let nsImage = NSImage(size: size)
-        nsImage.addRepresentation(rep)
-        return Image(nsImage: nsImage)
-        #else
-        return Image(uiImage: UIImage(cgImage: cgImage))
-        #endif
-    }
-}
 
 enum RGBFrameDecoder {
     /// Decode a packed RGB byte buffer (3 bytes per pixel) into a platform image.
