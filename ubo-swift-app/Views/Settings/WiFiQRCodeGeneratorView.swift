@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import UboAppKit
 
 #if os(iOS)
 import CoreLocation

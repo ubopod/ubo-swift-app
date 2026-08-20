@@ -20,9 +20,9 @@ struct WatchRenderView: View {
         Group {
             switch data.kind {
             case .qrCode:
-                WatchQRView(payload: extractString("data", "url", "payload"), title: data.title)
+                WatchQRView(value: extractString("value"), title: data.title, caption: extractString("caption"))
             case .qrCodeCarousel:
-                WatchQRCarousel(payloads: extractList("items", "urls"), title: data.title)
+                WatchQRCarousel(values: extractList("values"), title: data.title)
             case .textViewer:
                 WatchTextViewer(text: extractString("text", "content", "body"), title: data.title)
             case .imageViewer:
@@ -65,37 +65,48 @@ struct WatchRenderView: View {
     }
 }
 
-// Note: watchOS does not include CoreImage's QR generator in this SDK
-// configuration. Watch users see the payload as text (small) — for actual
-// scanning use the iPhone counterpart.
+// A real scannable QR bitmap, not a placeholder icon — the watch screen is
+// close enough in size to the pod's own 1.56" display and the ESP32
+// display, both of which render actual QR codes at this scale. No
+// hyperlink/value text underneath: there's no browser here to act on it,
+// so it would just cost the QR the room it needs (same reasoning as the
+// pod GUI's QRCodeRenderPage, which drops URL-shaped labels for the same
+// reason). `caption` is kept since it's not a link — it's a code the user
+// types after scanning (e.g. an OAuth device code).
 private struct WatchQRView: View {
-    let payload: String
+    let value: String
     let title: String
+    let caption: String
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 8) {
-                if !title.isEmpty {
-                    markupText(title).font(.caption).fontWeight(.semibold)
-                }
-                Image(systemName: "qrcode")
-                    .font(.system(size: 36))
-                    .foregroundStyle(.secondary)
-                Text(payload)
-                    .font(.system(size: 9, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                Text("Scan from iPhone")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+        VStack(spacing: 6) {
+            if !title.isEmpty {
+                markupText(title).font(.caption).fontWeight(.semibold)
             }
-            .padding(.horizontal, 8)
+            if let image = QRCodeImage.generate(from: value) {
+                image
+                    .interpolation(.none)
+                    .resizable()
+                    .aspectRatio(1, contentMode: .fit)
+                    .padding(4)
+                    .background(.white)
+                    .cornerRadius(8)
+            } else {
+                Text("Empty QR payload")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            if !caption.isEmpty {
+                Text(caption)
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+            }
         }
+        .padding(.horizontal, 6)
     }
 }
 
 private struct WatchQRCarousel: View {
-    let payloads: [String]
+    let values: [String]
     let title: String
     @State private var index: Int = 0
 
@@ -104,19 +115,21 @@ private struct WatchQRCarousel: View {
             if !title.isEmpty {
                 Text(title).font(.caption).fontWeight(.semibold)
             }
-            if payloads.isEmpty {
+            if values.isEmpty {
                 Text("No QR data").font(.caption2).foregroundStyle(.secondary)
             } else {
                 TabView(selection: $index) {
-                    ForEach(Array(payloads.enumerated()), id: \.offset) { (i, payload) in
-                        VStack(spacing: 4) {
-                            Image(systemName: "qrcode")
-                                .font(.system(size: 32))
-                                .foregroundStyle(.secondary)
-                            Text(payload)
-                                .font(.system(size: 9, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
+                    ForEach(Array(values.enumerated()), id: \.offset) { (i, value) in
+                        Group {
+                            if let image = QRCodeImage.generate(from: value) {
+                                image
+                                    .interpolation(.none)
+                                    .resizable()
+                                    .aspectRatio(1, contentMode: .fit)
+                                    .padding(4)
+                                    .background(.white)
+                                    .cornerRadius(8)
+                            }
                         }
                         .tag(i)
                     }

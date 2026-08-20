@@ -21,9 +21,20 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/ubopod/ubo-swift-grpc.git", branch: "dev"),
+        // CoreImage (and its CIFilter QR generator) isn't part of the
+        // watchOS SDK, so a CIFilter-based generator can't build for the
+        // watch target. QRCode falls back to a pure-Swift generator on
+        // watchOS while still using CoreImage on the platforms that have
+        // it — one call site for both, instead of a per-platform impl.
+        .package(url: "https://github.com/dagronf/QRCode.git", from: "28.0.0"),
     ],
     targets: [
-        .target(name: "UboAppShared"),
+        .target(
+            name: "UboAppShared",
+            dependencies: [
+                .product(name: "QRCode", package: "QRCode"),
+            ]
+        ),
         .target(
             name: "UboAppKit",
             dependencies: [
