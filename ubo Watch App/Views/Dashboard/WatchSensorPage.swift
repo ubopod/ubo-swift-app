@@ -30,8 +30,13 @@ struct WatchSensorPage: View {
 
                 switch device.status {
                 case .active:
-                    ForEach(device.entities) { entity in
-                        entityRow(entity)
+                    ForEach(Self.chunkEntities(device.entities)) { chunk in
+                        switch chunk {
+                        case .gaugeRun(let entities):
+                            gaugeRow(entities)
+                        case .plain(let entity):
+                            entityRow(entity)
+                        }
                     }
                 case .error:
                     Text("Sensor error").font(.caption2).foregroundStyle(.red)
@@ -50,32 +55,83 @@ struct WatchSensorPage: View {
         .scrollDisabled(true)
     }
 
+    private static func isGaugeEligible(_ entity: SensorEntityReading) -> Bool {
+        let spec = WatchSensorDisplay.spec(forKey: entity.key, deviceClass: entity.deviceClass)
+        return spec.range != nil && entity.value != nil
+    }
+
+    private enum EntityChunk: Identifiable {
+        case gaugeRun([SensorEntityReading])
+        case plain(SensorEntityReading)
+
+        var id: String {
+            switch self {
+            case .gaugeRun(let entities): return "gauge-" + entities.map(\.id).joined(separator: "-")
+            case .plain(let entity): return "plain-" + entity.id
+            }
+        }
+    }
+
+    /// Groups consecutive gauge-eligible entities into runs of up to 3
+    /// (mirrors the System page's CPU/RAM/Storage row), interspersed with
+    /// the non-gauge entities rendered individually in their original
+    /// order — e.g. ENS160's eCO2/TVOC/Air Quality Index become one 3-up
+    /// gauge row instead of falling back to plain label/value rows,
+    /// matching the Web UI's card layout.
+    private static func chunkEntities(_ entities: [SensorEntityReading]) -> [EntityChunk] {
+        var chunks: [EntityChunk] = []
+        var i = 0
+        while i < entities.count {
+            if isGaugeEligible(entities[i]) {
+                var run: [SensorEntityReading] = []
+                while i < entities.count, run.count < 3, isGaugeEligible(entities[i]) {
+                    run.append(entities[i])
+                    i += 1
+                }
+                chunks.append(.gaugeRun(run))
+            } else {
+                chunks.append(.plain(entities[i]))
+                i += 1
+            }
+        }
+        return chunks
+    }
+
+    @ViewBuilder
+    private func gaugeRow(_ entities: [SensorEntityReading]) -> some View {
+        HStack(spacing: 6) {
+            ForEach(entities) { entity in
+                let spec = WatchSensorDisplay.spec(forKey: entity.key, deviceClass: entity.deviceClass)
+                if let range = spec.range, let value = entity.value {
+                    WatchCompactGauge(
+                        fraction: WatchSensorDisplay.rangeFraction(value, range: range),
+                        valueText: WatchSensorDisplay.reading(entity.displayValue ?? entity.value, precision: entity.precision),
+                        label: entity.name ?? entity.key,
+                        color: .blue,
+                        // Server-driven — never hardcode a unit here.
+                        unit: entity.displayUnit ?? entity.unit
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private func entityRow(_ entity: SensorEntityReading) -> some View {
         let spec = WatchSensorDisplay.spec(forKey: entity.key, deviceClass: entity.deviceClass)
         let valueText = WatchSensorDisplay.reading(entity.displayValue ?? entity.value, precision: entity.precision)
 
-        if let range = spec.range, let value = entity.value {
-            HStack(spacing: 6) {
-                WatchCompactGauge(
-                    fraction: WatchSensorDisplay.rangeFraction(value, range: range),
-                    valueText: valueText,
-                    label: entity.name ?? entity.key,
-                    color: .blue
-                )
-            }
-        } else {
-            HStack(spacing: 6) {
-                Image(systemName: spec.icon)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Text(entity.name ?? entity.key)
-                    .font(.caption2)
-                    .lineLimit(1)
-                Spacer(minLength: 2)
-                Text(valueText + ((entity.displayUnit ?? entity.unit).map { " \($0)" } ?? ""))
-                    .font(.caption2.weight(.semibold))
-            }
+        HStack(spacing: 6) {
+            Image(systemName: spec.icon)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(entity.name ?? entity.key)
+                .font(.caption2)
+                .lineLimit(1)
+            Spacer(minLength: 2)
+            Text(valueText + ((entity.displayUnit ?? entity.unit).map { " \($0)" } ?? ""))
+                .font(.caption2.weight(.semibold))
         }
     }
 }

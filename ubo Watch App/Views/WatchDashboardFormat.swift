@@ -105,6 +105,17 @@ enum WatchSensorDisplay {
         "illuminance": WatchSensorSpec(icon: "sun.max.fill", range: 0...1000),
         "carbon_dioxide": WatchSensorSpec(icon: "aqi.medium", range: 400...2000),
         "aqi": WatchSensorSpec(icon: "aqi.high", range: 1...5),
+        // ENS160's TVOC entity — 0-2200 ppb covers "excellent" through
+        // "poor" on ENS160's own IAQ scale; everyday indoor readings stay
+        // well under this, unhealthy/severe territory starts above it.
+        "volatile_organic_compounds_parts": WatchSensorSpec(icon: "aqi.medium", range: 0...2200),
+        // PMSA003I's particulate-matter readings (registry.default.json) —
+        // typical indoor/ambient µg/m³ scale, coarse enough to fill the
+        // gauge meaningfully without needing a precise AQI breakpoint
+        // table for a small watch ring.
+        "pm1": WatchSensorSpec(icon: "aqi.medium", range: 0...100),
+        "pm25": WatchSensorSpec(icon: "aqi.medium", range: 0...100),
+        "pm10": WatchSensorSpec(icon: "aqi.medium", range: 0...150),
     ]
     private static let fallback = WatchSensorSpec(icon: "gauge", range: nil)
 
