@@ -103,7 +103,7 @@ struct WatchActionsView: View {
 
                 Section("Assistant") {
                     Button {
-                        Task { await viewModel.toggleMicCapture() }
+                        Task { await viewModel.toggleMicCapture(triggerSource: .watchDoubleTap) }
                     } label: {
                         Label(
                             viewModel.isAssistantListening ? "Stop Talking" : "Push to Talk",
@@ -113,6 +113,11 @@ struct WatchActionsView: View {
                         )
                         .foregroundStyle(viewModel.isAssistantListening ? Color.red : Color.primary)
                     }
+                    // Double Tap (Series 9 / Ultra 2 and later) fires the
+                    // screen's primary action. Inert on older watches and when
+                    // the user has the gesture switched off, so the on-screen
+                    // tap stays the guaranteed path.
+                    .handGestureShortcut(.primaryAction)
 
                     // Device-routed session (the Pi listens with its own
                     // mics). Disabled while the watch mic is streaming so the
