@@ -111,7 +111,13 @@ struct WatchSensorPage: View {
 
     @ViewBuilder
     private func gaugeRow(_ entities: [SensorEntityReading], scale: CGFloat = 0.8) -> some View {
-        HStack(spacing: 6) {
+        // .top, not the default .center: a gauge without a unit (e.g. a
+        // unitless Air Quality Index next to eCO2's "ppm"/TVOC's "ppb")
+        // has a shorter value label inside its ring than its siblings,
+        // and center-aligning the row by each gauge's full height (ring +
+        // wrapped caption below) shifts that ring up relative to the
+        // others instead of keeping all three rings level.
+        HStack(alignment: .top, spacing: 6) {
             ForEach(entities) { entity in
                 let spec = WatchSensorDisplay.spec(forKey: entity.key, deviceClass: entity.deviceClass)
                 if let range = spec.range, let value = entity.value {
