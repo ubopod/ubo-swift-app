@@ -45,7 +45,12 @@ struct WatchAppsPage: View {
     }
 
     var body: some View {
-        ScrollView {
+        // scrollDisabled — see the comment on WatchSystemPage's body for
+        // why: neither ScrollView nor List hands boundary overscroll off
+        // to the enclosing TabView(.verticalPage) once content overflows,
+        // making Device/Actions unreachable by swipe. The Crown still
+        // scrolls this natively without touch.
+        List {
             VStack(spacing: 8) {
                 Text("Apps")
                     .font(.headline)
@@ -68,6 +73,9 @@ struct WatchAppsPage: View {
                 }
             }
             .padding(.horizontal)
+            .listRowBackground(Color.clear)
         }
+        .listStyle(.carousel)
+        .scrollDisabled(true)
     }
 }
