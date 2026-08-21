@@ -19,6 +19,11 @@ struct WatchCompactGauge: View {
     /// entirely, matching System page's %-embedded-in-valueText gauges,
     /// which don't need one.
     var unit: String? = nil
+    /// `accessoryCircular`'s intrinsic size scaled by this factor. 0.8 —
+    /// the default — is sized for 2-3 gauges sharing one row; a page with
+    /// only one gauge-eligible entity has the whole page to itself and
+    /// should pass something larger (`WatchSensorPage` uses 1.2).
+    var scale: CGFloat = 0.8
 
     var body: some View {
         VStack(spacing: 4) {
@@ -37,7 +42,7 @@ struct WatchCompactGauge: View {
             }
             .gaugeStyle(.accessoryCircular)
             .tint(color)
-            .scaleEffect(0.8)
+            .scaleEffect(scale)
 
             Text(label)
                 .font(.system(size: 9))

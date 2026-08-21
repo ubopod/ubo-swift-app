@@ -29,6 +29,12 @@ struct WatchSensorPage: View {
                     .lineLimit(1)
 
                 switch device.status {
+                case .active where isSingleGauge:
+                    // A device with exactly one gauge-eligible reading has
+                    // the whole page to itself — no other rows compete for
+                    // room, so size the gauge up instead of leaving most
+                    // of the screen empty.
+                    gaugeRow(device.entities, scale: 1.2)
                 case .active:
                     ForEach(Self.chunkEntities(device.entities)) { chunk in
                         switch chunk {
@@ -58,6 +64,12 @@ struct WatchSensorPage: View {
     private static func isGaugeEligible(_ entity: SensorEntityReading) -> Bool {
         let spec = WatchSensorDisplay.spec(forKey: entity.key, deviceClass: entity.deviceClass)
         return spec.range != nil && entity.value != nil
+    }
+
+    private var isSingleGauge: Bool {
+        device.status == .active
+            && device.entities.count == 1
+            && Self.isGaugeEligible(device.entities[0])
     }
 
     private enum EntityChunk: Identifiable {
@@ -98,7 +110,7 @@ struct WatchSensorPage: View {
     }
 
     @ViewBuilder
-    private func gaugeRow(_ entities: [SensorEntityReading]) -> some View {
+    private func gaugeRow(_ entities: [SensorEntityReading], scale: CGFloat = 0.8) -> some View {
         HStack(spacing: 6) {
             ForEach(entities) { entity in
                 let spec = WatchSensorDisplay.spec(forKey: entity.key, deviceClass: entity.deviceClass)
@@ -109,7 +121,8 @@ struct WatchSensorPage: View {
                         label: entity.name ?? entity.key,
                         color: .blue,
                         // Server-driven — never hardcode a unit here.
-                        unit: entity.displayUnit ?? entity.unit
+                        unit: entity.displayUnit ?? entity.unit,
+                        scale: scale
                     )
                     .frame(maxWidth: .infinity)
                 }
