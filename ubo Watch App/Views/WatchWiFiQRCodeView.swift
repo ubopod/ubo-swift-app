@@ -78,12 +78,22 @@ struct WatchWiFiQRCodeView: View {
                 TextField("SSID", text: $ssid)
                     .onChange(of: ssid) { qrImage = nil }
 
-                Picker("Security", selection: $security) {
-                    ForEach(WatchWiFiSecurityType.allCases) { type in
-                        Text(type.label).tag(type)
-                    }
+                // A `Picker` outside a `List` renders as an overlapping
+                // inline wheel on watchOS instead of a normal row — a
+                // tap-to-cycle button avoids that entirely, and matches
+                // the same cycling chip used for this field on Wear OS.
+                Button {
+                    security = {
+                        switch security {
+                        case .wpa: return .wep
+                        case .wep: return .none
+                        case .none: return .wpa
+                        }
+                    }()
+                    qrImage = nil
+                } label: {
+                    Text("Security: \(security.label)")
                 }
-                .onChange(of: security) { qrImage = nil }
 
                 if security != .none {
                     SecureField("Password", text: $password)
