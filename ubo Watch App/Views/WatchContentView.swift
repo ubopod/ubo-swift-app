@@ -53,59 +53,132 @@ struct WatchConnectionView: View {
     @State private var host: String = ""
     @State private var portString: String = "50051"
     @State private var useTLS: Bool = false
-    @State private var isConnecting = false
+    @State private var discovered: [DiscoveredDevice] = []
+    @State private var browseTask: Task<Void, Never>?
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                Image(systemName: "antenna.radiowaves.left.and.right")
-                    .font(.largeTitle)
-                    .foregroundStyle(Color.accentColor)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 14) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.largeTitle)
+                        .foregroundStyle(Color.accentColor)
 
-                Text("Ubo Connect")
-                    .font(.headline)
+                    Text("Ubo Connect")
+                        .font(.headline)
 
-                TextField("Host", text: $host)
-                    .textContentType(.URL)
+                    TextField("Host", text: $host)
+                        .textContentType(.URL)
 
-                TextField("Port", text: $portString)
-                    .onChange(of: portString) { _, newValue in
-                        let digits = newValue.filter(\.isNumber)
-                        if digits != newValue { portString = digits }
-                    }
+                    TextField("Port", text: $portString)
+                        .onChange(of: portString) { _, newValue in
+                            let digits = newValue.filter(\.isNumber)
+                            if digits != newValue { portString = digits }
+                        }
 
-                Toggle("Use TLS", isOn: $useTLS)
-                    .font(.caption)
+                    Toggle("Use TLS", isOn: $useTLS)
+                        .font(.caption)
 
-                Button {
-                    connect()
-                } label: {
-                    if viewModel.isConnecting {
-                        ProgressView()
-                    } else {
-                        Text("Connect")
-                    }
-                }
-                .disabled(host.isEmpty || viewModel.isConnecting)
-
-                if !viewModel.savedHost.isEmpty {
-                    Button("Use Last: \(viewModel.savedHost)") {
-                        host = viewModel.savedHost
-                        portString = String(viewModel.savedPort)
-                        useTLS = viewModel.savedUseTLS
+                    Button {
                         connect()
+                    } label: {
+                        if viewModel.isConnecting {
+                            ProgressView()
+                        } else {
+                            Text("Connect")
+                        }
                     }
-                    .font(.caption)
+                    .disabled(host.isEmpty || viewModel.isConnecting)
+
+                    // Discovered devices (Bonjour) — mirrors ConnectionView's
+                    // always-shown section with a "searching" placeholder.
+                    VStack(spacing: 6) {
+                        Text("Found on network")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        if discovered.isEmpty {
+                            Text("Searching…")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            ForEach(Array(discovered).sorted(by: { $0.name < $1.name }), id: \.self) { device in
+                                Button {
+                                    host = device.host
+                                    portString = String(device.port)
+                                    useTLS = false
+                                    connect()
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(device.name).font(.caption.weight(.medium))
+                                        Text("\(device.host):\(String(device.port))")
+                                            .font(.caption2.monospaced())
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                        }
+                    }
+
+                    // Recent Connections (up to 3) — replaces the old
+                    // single "Use Last" button with the full list, same as
+                    // the phone app's ConnectionView.
+                    if !viewModel.recentConnections.isEmpty {
+                        VStack(spacing: 6) {
+                            Text("Recent Connections")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            ForEach(viewModel.recentConnections) { recent in
+                                Button {
+                                    host = recent.host
+                                    portString = String(recent.port)
+                                    useTLS = recent.useTLS
+                                    connect()
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(recent.host).font(.caption.weight(.medium))
+                                        Text("Port \(String(recent.port))\(recent.useTLS ? " · TLS" : "")")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                        }
+                    }
+
+                    // Setting up a brand new Ubo: it isn't on any network
+                    // yet, so this has to work before any connection exists.
+                    VStack(spacing: 6) {
+                        Text("New Device Setup")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        NavigationLink {
+                            WatchWiFiQRCodeView()
+                        } label: {
+                            Label("Set up a new Ubo's Wi-Fi", systemImage: "qrcode")
+                                .font(.caption)
+                        }
+                    }
                 }
+                .padding()
             }
-            .padding()
-        }
-        .onAppear {
-            if host.isEmpty && !viewModel.savedHost.isEmpty {
-                host = viewModel.savedHost
-                portString = String(viewModel.savedPort)
-                useTLS = viewModel.savedUseTLS
+            .onAppear {
+                if host.isEmpty && !viewModel.savedHost.isEmpty {
+                    host = viewModel.savedHost
+                    portString = String(viewModel.savedPort)
+                    useTLS = viewModel.savedUseTLS
+                }
+                startDiscovery()
             }
+            .onDisappear { stopDiscovery() }
         }
     }
 
@@ -114,6 +187,20 @@ struct WatchConnectionView: View {
         Task {
             do { try await viewModel.connect(host: host, port: port, useTLS: useTLS) } catch { viewModel.report("connect", error) }
         }
+    }
+
+    private func startDiscovery() {
+        browseTask?.cancel()
+        browseTask = Task { @MainActor in
+            for await snapshot in UboDiscovery.browse() {
+                discovered = Array(snapshot)
+            }
+        }
+    }
+
+    private func stopDiscovery() {
+        browseTask?.cancel()
+        browseTask = nil
     }
 }
 
