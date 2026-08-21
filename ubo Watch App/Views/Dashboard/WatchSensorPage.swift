@@ -14,7 +14,14 @@ struct WatchSensorPage: View {
     let device: SensorDeviceState
 
     var body: some View {
-        ScrollView {
+        // scrollDisabled — see the comment on WatchSystemPage's body for
+        // why: neither ScrollView nor List hands boundary overscroll off
+        // to the enclosing TabView(.verticalPage) once content overflows,
+        // making Device/Actions unreachable by swipe. This is the page
+        // that made the bug visible in practice: a device with several
+        // entities is exactly the case that reliably overflows. The Crown
+        // still scrolls this natively without touch.
+        List {
             VStack(spacing: 8) {
                 Text(device.label)
                     .font(.headline)
@@ -37,7 +44,10 @@ struct WatchSensorPage: View {
                 }
             }
             .padding(.horizontal)
+            .listRowBackground(Color.clear)
         }
+        .listStyle(.carousel)
+        .scrollDisabled(true)
     }
 
     @ViewBuilder

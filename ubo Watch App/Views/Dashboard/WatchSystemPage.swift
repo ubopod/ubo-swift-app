@@ -17,7 +17,17 @@ struct WatchSystemPage: View {
     let stats: SystemStats
 
     var body: some View {
-        ScrollView {
+        // Neither `ScrollView` nor `List` hands boundary overscroll off to
+        // the enclosing `TabView(.verticalPage)` on watchOS once content
+        // actually overflows — confirmed by reproducing swipe-down doing
+        // nothing even once already scrolled all the way to the Disconnect
+        // button at the bottom, with both container types. Whichever one
+        // has real scrollable content just owns the entire vertical touch
+        // axis, permanently, making the outer Device/Actions tabs
+        // unreachable by swipe. `scrollDisabled` frees touch for the outer
+        // Pager; the Digital Crown still scrolls this page's content
+        // natively without it (no separate wiring needed for that half).
+        List {
             VStack(spacing: 10) {
                 Text("System")
                     .font(.headline)
@@ -71,6 +81,9 @@ struct WatchSystemPage: View {
                 .tint(.red)
             }
             .padding(.horizontal)
+            .listRowBackground(Color.clear)
         }
+        .listStyle(.carousel)
+        .scrollDisabled(true)
     }
 }
