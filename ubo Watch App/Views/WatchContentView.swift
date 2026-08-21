@@ -116,9 +116,12 @@ struct WatchConnectionView: View {
                                         Text("\(device.host):\(String(device.port))")
                                             .font(.caption2.monospaced())
                                             .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.7)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -145,9 +148,12 @@ struct WatchConnectionView: View {
                                         Text("Port \(String(recent.port))\(recent.useTLS ? " · TLS" : "")")
                                             .font(.caption2)
                                             .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                            .minimumScaleFactor(0.7)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
