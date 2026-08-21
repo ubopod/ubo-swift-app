@@ -469,7 +469,13 @@ public final class DeviceViewModel {
     #if os(iOS) || os(macOS) || os(watchOS)
     /// Toggle "press to talk" mic capture. Streams PCM16 frames to the
     /// device's assistant pipeline.
-    public func toggleMicCapture() async {
+    ///
+    /// `triggerSource` tells the core how the session was triggered so it can
+    /// pick a turn-completion policy. Left `nil` the core applies none and the
+    /// pipeline falls back to a short silence window; pass
+    /// `.wakePhrase(mode: .quickChat)` to have the device end the turn after
+    /// its configured quick-chat silence window instead.
+    public func toggleMicCapture(triggerSource: AssistantTriggerSource? = nil) async {
         if assistantListening {
             await stopAssistantSession()
         } else {
@@ -478,7 +484,10 @@ public final class DeviceViewModel {
             let source = audioSourceId
             UboLog.audio.info("toggleMicCapture: starting (audioSource=\(source))")
             do {
-                try await client.startAssistantListening(audioSource: source)
+                try await client.startAssistantListening(
+                    audioSource: source,
+                    source: triggerSource
+                )
                 UboLog.audio.info("startAssistantListening dispatched ok")
                 assistantListening = true
             } catch {
