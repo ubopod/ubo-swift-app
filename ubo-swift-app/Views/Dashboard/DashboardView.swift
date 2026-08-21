@@ -117,7 +117,7 @@ struct DashboardView: View {
                             await viewModel.disconnect()
                         }
                     } label: {
-                        Image(systemName: "link")
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
                     }
                 }
             }

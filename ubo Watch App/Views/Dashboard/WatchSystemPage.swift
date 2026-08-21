@@ -13,20 +13,22 @@ import SwiftUI
 import UboSwift
 
 struct WatchSystemPage: View {
-    @Environment(DeviceViewModel.self) private var viewModel
     let stats: SystemStats
 
     var body: some View {
         // Neither `ScrollView` nor `List` hands boundary overscroll off to
         // the enclosing `TabView(.verticalPage)` on watchOS once content
         // actually overflows — confirmed by reproducing swipe-down doing
-        // nothing even once already scrolled all the way to the Disconnect
-        // button at the bottom, with both container types. Whichever one
-        // has real scrollable content just owns the entire vertical touch
-        // axis, permanently, making the outer Device/Actions tabs
-        // unreachable by swipe. `scrollDisabled` frees touch for the outer
-        // Pager; the Digital Crown still scrolls this page's content
-        // natively without it (no separate wiring needed for that half).
+        // nothing once scrolled to the bottom of an overflowing page, with
+        // both container types. Whichever one has real scrollable content
+        // just owns the entire vertical touch axis, permanently, making
+        // the outer Device/Actions tabs unreachable by swipe.
+        // `scrollDisabled` frees touch for the outer Pager; the Digital
+        // Crown still scrolls this page's content natively without it (no
+        // separate wiring needed for that half) — but anything requiring
+        // touch to reach (like the disconnect button this page used to
+        // have) is effectively unreachable, which is why Disconnect now
+        // lives in the Actions tab's plain scrolling list instead.
         List {
             VStack(spacing: 10) {
                 Text("System")
@@ -70,15 +72,6 @@ struct WatchSystemPage: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-
-                Button {
-                    Task { await viewModel.disconnect() }
-                } label: {
-                    Label("Disconnect", systemImage: "wifi.slash")
-                        .font(.caption2)
-                }
-                .buttonStyle(.bordered)
-                .tint(.red)
             }
             .padding(.horizontal)
             .listRowBackground(Color.clear)
