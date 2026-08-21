@@ -140,6 +140,16 @@ struct WatchActionsView: View {
                         Label("Power Off", systemImage: "power")
                     }
                 }
+
+                // Mirrors the phone app's Settings-tab Disconnect
+                // button/Dashboard-toolbar icon — same glyph, no confirm.
+                Section("Connection") {
+                    Button {
+                        Task { await viewModel.disconnect() }
+                    } label: {
+                        Label("Disconnect", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                }
             }
             .navigationTitle("Actions")
             .alert("Confirm Action", isPresented: $showPowerAlert) {
