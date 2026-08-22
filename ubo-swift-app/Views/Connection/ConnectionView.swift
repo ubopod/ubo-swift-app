@@ -13,7 +13,7 @@ struct ConnectionView: View {
     @Environment(DeviceViewModel.self) private var viewModel
 
     @State private var host: String = ""
-    @State private var portString: String = "50051"
+    @State private var portString: String = String(UboConstants.defaultPort)
     @State private var useTLS: Bool = false
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
@@ -65,7 +65,7 @@ struct ConnectionView: View {
                                 .font(.subheadline.weight(.medium))
                                 .foregroundStyle(.secondary)
 
-                            TextField("50051", text: $portString)
+                            TextField(String(UboConstants.defaultPort), text: $portString)
                                 #if !os(tvOS)
                                 .textFieldStyle(.roundedBorder)
                                 #endif
@@ -283,7 +283,7 @@ struct ConnectionView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         #endif
 
-        let port = Int(portString) ?? 50051
+        let port = Int(portString) ?? UboConstants.defaultPort
 
         Task {
             do {
