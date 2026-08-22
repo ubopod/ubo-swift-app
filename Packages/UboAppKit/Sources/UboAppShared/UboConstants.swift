@@ -3,8 +3,12 @@ import Foundation
 /// Central home for values shared across the app targets and the widget.
 /// Anything that used to be a scattered magic number belongs here.
 public enum UboConstants {
-    /// Default gRPC port the Ubo core listens on.
-    public static let defaultPort = 50051
+    /// Default gRPC port for reaching a device over the network.
+    ///
+    /// 50053 is Envoy's raw-TCP proxy, which exposes the core's gRPC server
+    /// to the LAN. The core itself listens on 127.0.0.1:50051 and is not
+    /// reachable from another device.
+    public static let defaultPort = 50053
 
     /// App Group identifier for sharing data between app and widget.
     public static let appGroupIdentifier = "group.com.getubo.ubo-swift-app.shared"

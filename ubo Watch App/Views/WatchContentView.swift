@@ -51,7 +51,7 @@ struct WatchConnectionView: View {
     @Environment(DeviceViewModel.self) private var viewModel
 
     @State private var host: String = ""
-    @State private var portString: String = "50051"
+    @State private var portString: String = String(UboConstants.defaultPort)
     @State private var useTLS: Bool = false
     @State private var discovered: [DiscoveredDevice] = []
     @State private var browseTask: Task<Void, Never>?
@@ -189,7 +189,7 @@ struct WatchConnectionView: View {
     }
 
     private func connect() {
-        let port = Int(portString) ?? 50051
+        let port = Int(portString) ?? UboConstants.defaultPort
         Task {
             do { try await viewModel.connect(host: host, port: port, useTLS: useTLS) } catch { viewModel.report("connect", error) }
         }
