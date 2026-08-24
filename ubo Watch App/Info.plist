@@ -8,5 +8,9 @@
 		<string>_http._tcp</string>
 		<string>_uborpc._tcp</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 </dict>
 </plist>
