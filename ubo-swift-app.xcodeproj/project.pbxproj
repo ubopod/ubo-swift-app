@@ -116,11 +116,21 @@
 			);
 			target = 3B2BFCF42F2A9EB8009F6CB1 /* ubo-swift-app */;
 		};
+		5B4CC2422FF0F64C00FF2409 /* Exceptions for "ubo Watch App" folder in "ubo Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 3B12D7CD2F2AA2BD00C9B856 /* ubo Watch App */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3B12D7CF2F2AA2BD00C9B856 /* ubo Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5B4CC2422FF0F64C00FF2409 /* Exceptions for "ubo Watch App" folder in "ubo Watch App" target */,
+			);
 			path = "ubo Watch App";
 			sourceTree = "<group>";
 		};
@@ -646,8 +656,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "ubo Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
-				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp;_uborpc._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses your microphone to talk to the Ubo assistant.";
 				INFOPLIST_KEY_UIAppFonts = "ArimoNerdFont-Regular.ttf";
@@ -684,8 +694,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "ubo Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Ubo;
-				INFOPLIST_KEY_NSBonjourServices = "_grpc._tcp;_http._tcp;_uborpc._tcp";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "This app needs access to your local network to connect to Ubo devices.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses your microphone to talk to the Ubo assistant.";
 				INFOPLIST_KEY_UIAppFonts = "ArimoNerdFont-Regular.ttf";
