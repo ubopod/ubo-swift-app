@@ -117,6 +117,22 @@ public final class DeviceViewModel {
     #endif
 
     public init() {
+        #if os(watchOS)
+        // TN3135: Network.framework/BSD sockets on watchOS only work inside
+        // an active audio session — outside one, connections silently get
+        // routed onto the "prefer companion" path and NECP-denied instead of
+        // ever reaching a local-network permission prompt. Every network op
+        // this app does (Bonjour discovery on the connect screen, the gRPC
+        // connect itself) needs this active before it runs, so it's armed
+        // here at view-model construction rather than after a connect
+        // attempt (which is too late — the attempt that needed it already
+        // failed).
+        do {
+            try AudioSessionCoordinator.activatePlayback()
+        } catch {
+            UboLog.audio.error("failed to activate audio session for networking: \(error.localizedDescription)")
+        }
+        #endif
         // Observe client's published properties. The client publishes on the
         // main actor and this class is @MainActor, so no queue hop is needed.
         client.$connectionState
