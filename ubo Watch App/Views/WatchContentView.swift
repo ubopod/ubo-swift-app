@@ -13,6 +13,8 @@ struct WatchContentView: View {
     @Environment(DeviceViewModel.self) private var viewModel
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var hasAttemptedAutoConnect = false
+    @State private var showError = false
+    @State private var errorMessage = ""
 
     var body: some View {
         Group {
@@ -40,9 +42,20 @@ struct WatchContentView: View {
         .task {
             // Auto-reconnect with saved settings on launch
             if hasCompletedOnboarding && !viewModel.isConnected && !viewModel.isConnecting && viewModel.hasSavedConnection {
-                do { try await viewModel.connectWithSavedSettings() } catch { viewModel.report("connectWithSavedSettings", error) }
+                do {
+                    try await viewModel.connectWithSavedSettings()
+                } catch {
+                    viewModel.report("connectWithSavedSettings", error)
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
             }
             hasAttemptedAutoConnect = true
+        }
+        .alert("Connection Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
         }
     }
 }
@@ -55,6 +68,8 @@ struct WatchConnectionView: View {
     @State private var useTLS: Bool = false
     @State private var discovered: [DiscoveredDevice] = []
     @State private var browseTask: Task<Void, Never>?
+    @State private var showError: Bool = false
+    @State private var errorMessage: String = ""
 
     var body: some View {
         NavigationStack {
@@ -185,13 +200,23 @@ struct WatchConnectionView: View {
                 startDiscovery()
             }
             .onDisappear { stopDiscovery() }
+            .alert("Connection Error", isPresented: $showError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
         }
     }
 
     private func connect() {
         let port = Int(portString) ?? UboConstants.defaultPort
         Task {
-            do { try await viewModel.connect(host: host, port: port, useTLS: useTLS) } catch { viewModel.report("connect", error) }
+            do {
+                try await viewModel.connect(host: host, port: port, useTLS: useTLS)
+            } catch {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
         }
     }
 
