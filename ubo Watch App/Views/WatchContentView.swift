@@ -120,15 +120,21 @@ struct WatchConnectionView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
                             ForEach(Array(discovered).sorted(by: { $0.name < $1.name }), id: \.self) { device in
+                                // A physical Watch can't reach `device.port` (the
+                                // native raw-TCP proxy) at all — TN3135 blocks it
+                                // outright. Use the grpc-web bridge port instead,
+                                // falling back to `port` only against an older
+                                // core that hasn't started advertising it yet.
+                                let connectPort = device.grpcWebPort ?? device.port
                                 Button {
                                     host = device.host
-                                    portString = String(device.port)
+                                    portString = String(connectPort)
                                     useTLS = false
                                     connect()
                                 } label: {
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(device.name).font(.caption.weight(.medium))
-                                        Text("\(device.host):\(String(device.port))")
+                                        Text("\(device.host):\(String(connectPort))")
                                             .font(.caption2.monospaced())
                                             .foregroundStyle(.secondary)
                                             .lineLimit(1)

@@ -8,7 +8,17 @@ public enum UboConstants {
     /// 50053 is Envoy's raw-TCP proxy, which exposes the core's gRPC server
     /// to the LAN. The core itself listens on 127.0.0.1:50051 and is not
     /// reachable from another device.
+    ///
+    /// A physical Apple Watch can't reach that raw-TCP proxy at all — real
+    /// hardware blocks low-level networking outright per Apple's TN3135
+    /// technote — so watchOS defaults to 50052, Envoy's grpc-web bridge,
+    /// which `GRPCWebClientTransport` speaks over `URLSession` instead.
+    /// Every other platform is unaffected and keeps 50053.
+    #if os(watchOS)
+    public static let defaultPort = 50052
+    #else
     public static let defaultPort = 50053
+    #endif
 
     /// App Group identifier for sharing data between app and widget.
     public static let appGroupIdentifier = "group.com.getubo.ubo-swift-app.shared"

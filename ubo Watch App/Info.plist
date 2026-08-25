@@ -12,5 +12,17 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<!-- GRPCWebClientTransport talks to the Pi's Envoy bridge over plain
+	     http:// via URLSession — the only Apple platform in this app that
+	     goes through URLSession rather than a raw HTTP/2 socket, so it's
+	     the only Info.plist that needs this. Scoped to local-network
+	     targets only (mDNS ".local" names and RFC 1918/link-local IP
+	     literals), not NSAllowsArbitraryLoads, which would weaken every
+	     connection the app makes. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>
