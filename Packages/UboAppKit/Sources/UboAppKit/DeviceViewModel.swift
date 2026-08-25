@@ -304,8 +304,20 @@ public final class DeviceViewModel {
         set { UserDefaults.standard.set(newValue, forKey: "deviceUseTLS") }
     }
 
+    /// Whether the app was connected the last time it was closed —
+    /// `true` on a successful `connect()`, `false` on `disconnect()`.
+    /// `hasSavedConnection` uses this to auto-connect on launch only if
+    /// the user was actually connected last time, not just because
+    /// credentials happen to be on file: leaving the app disconnected and
+    /// relaunching it should land back on the connect screen, not
+    /// silently reconnect underneath the user.
+    private var wasConnected: Bool {
+        get { UserDefaults.standard.bool(forKey: "deviceWasConnected") }
+        set { UserDefaults.standard.set(newValue, forKey: "deviceWasConnected") }
+    }
+
     public var hasSavedConnection: Bool {
-        !savedHost.isEmpty
+        !savedHost.isEmpty && wasConnected
     }
 
     /// The last 3 distinct (host, port) pairs connected to, most recent
@@ -434,6 +446,7 @@ public final class DeviceViewModel {
         audioPlayback.configure(client: client)
         audioPlayback.start()
         #endif
+        wasConnected = true
     }
 
     public func connectWithSavedSettings() async throws {
@@ -442,6 +455,7 @@ public final class DeviceViewModel {
     }
 
     public func disconnect() async {
+        wasConnected = false
         #if os(iOS) || os(macOS)
         cameraObservationTask?.cancel()
         cameraObservationTask = nil
