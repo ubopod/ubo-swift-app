@@ -20,6 +20,17 @@ struct ConnectionView: View {
     @State private var discovered: [DiscoveredDevice] = []
     @State private var browseTask: Task<Void, Never>?
 
+    // Explicitly typed and pulled out of the view body: inlined as
+    // `Array(discovered).sorted(by:)` (or even `discovered.sorted(by:)`)
+    // directly inside `ForEach(...)`, the compiler's overload resolution
+    // for `ForEach`/`Array.init` goes ambiguous against unrelated
+    // `AsyncSequence`-based initializers pulled in transitively (from
+    // `swift-async-algorithms`) and picks the wrong candidate — a plain,
+    // concretely-typed intermediate value sidesteps that entirely.
+    private var sortedDiscovered: [DiscoveredDevice] {
+        discovered.sorted(by: { $0.name < $1.name })
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -131,7 +142,7 @@ struct ConnectionView: View {
                                 .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
-                            ForEach(Array(discovered).sorted(by: { $0.name < $1.name }), id: \.self) { device in
+                            ForEach(sortedDiscovered, id: \.self) { device in
                                 Button {
                                     host = device.host
                                     portString = String(device.port)
