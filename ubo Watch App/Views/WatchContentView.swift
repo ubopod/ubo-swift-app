@@ -71,6 +71,17 @@ struct WatchConnectionView: View {
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
 
+    // Explicitly typed and pulled out of the view body: inlined as
+    // `Array(discovered).sorted(by:)` (or even `discovered.sorted(by:)`)
+    // directly inside `ForEach(...)`, the compiler's overload resolution
+    // for `ForEach`/`Array.init` goes ambiguous against unrelated
+    // `AsyncSequence`-based initializers pulled in transitively (from
+    // `swift-async-algorithms`) and picks the wrong candidate — a plain,
+    // concretely-typed intermediate value sidesteps that entirely.
+    private var sortedDiscovered: [DiscoveredDevice] {
+        discovered.sorted(by: { $0.name < $1.name })
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -119,7 +130,7 @@ struct WatchConnectionView: View {
                                 .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
-                            ForEach(Array(discovered).sorted(by: { $0.name < $1.name }), id: \.self) { device in
+                            ForEach(sortedDiscovered, id: \.self) { device in
                                 // A physical Watch can't reach `device.port` (the
                                 // native raw-TCP proxy) at all — TN3135 blocks it
                                 // outright. Use the grpc-web bridge port instead,
