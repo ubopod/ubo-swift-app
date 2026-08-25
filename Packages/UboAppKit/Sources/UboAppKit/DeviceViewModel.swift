@@ -281,7 +281,21 @@ public final class DeviceViewModel {
     }
 
     public var savedPort: Int {
-        get { UserDefaults.standard.integer(forKey: "devicePort").nonZero ?? UboConstants.defaultPort }
+        get {
+            let stored = UserDefaults.standard.integer(forKey: "devicePort").nonZero
+            #if os(watchOS)
+            // A watch that connected before this feature shipped has 50053
+            // (the old cross-platform default) persisted from
+            // `UboConstants.defaultPort`'s previous unconditional value.
+            // That port is unreachable from a physical Watch, and no
+            // watchOS user could have meaningfully chosen it themselves —
+            // it was never surfaced as anything but the invisible default.
+            // Treat it the same as unset so those installs pick up the new
+            // watchOS default (50052) instead of staying stuck.
+            if stored == 50053 { return UboConstants.defaultPort }
+            #endif
+            return stored ?? UboConstants.defaultPort
+        }
         set { UserDefaults.standard.set(newValue, forKey: "devicePort") }
     }
 
@@ -373,16 +387,37 @@ public final class DeviceViewModel {
     // MARK: - Connection lifecycle
 
     public func connect(host: String, port: Int = UboConstants.defaultPort, useTLS: Bool = false) async throws {
+        #if os(watchOS)
+        // The grpc-web bridge (`GRPCWebClientTransport`) has no TLS
+        // listener on the Pi today — fail loudly rather than silently
+        // downgrading a user's explicit "Use TLS" toggle to plaintext.
+        // Checked before any persistence below, so a rejected attempt
+        // doesn't poison `savedUseTLS`/recent-connections with a setting
+        // that was never actually honored.
+        guard !useTLS else {
+            throw UboError.connectionFailed(
+                NSError(
+                    domain: "Ubo",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "TLS isn't available over the grpc-web bridge yet."]
+                )
+            )
+        }
+        #endif
         savedHost = host
         savedPort = port
         savedUseTLS = useTLS
         recordRecentConnection(host: host, port: port, useTLS: useTLS)
+        #if os(watchOS)
+        try await client.connect(host: host, port: port, security: .plaintext, subscribeToDisplay: false)
+        #else
         try await client.connect(
             host: host,
             port: port,
             security: useTLS ? .tls(.defaults) : .plaintext,
             subscribeToDisplay: false
         )
+        #endif
         client.startViewSubscription()
         client.startStatsSubscription()
         client.startInputsSubscription()
