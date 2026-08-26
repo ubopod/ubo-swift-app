@@ -40,6 +40,16 @@ public final class MicCaptureService {
     private var tapCount = 0
     private var sampleCount = 0
 
+    /// Validation instrumentation (temporary): a local monotonic counter
+    /// logged at dispatch and again at completion. `dispatch()` fires an
+    /// unstructured `Task` per chunk with no queue or ordering guarantee —
+    /// comparing send-order vs. completion-order in a captured device log
+    /// is a proxy for whether chunks are arriving at the core out of order
+    /// (not proof, since completion order isn't guaranteed to equal server
+    /// arrival order, but a reasonable signal for one-unary-RPC-per-chunk).
+    /// Remove once that's confirmed or ruled out on real hardware.
+    private var dispatchSequence: UInt64 = 0
+
     public init() {}
 
     public func configure(client: UboClient) {
@@ -152,6 +162,9 @@ public final class MicCaptureService {
             UboLog.audio.debug("mic streaming: \(self.sampleCount) samples sent (taps=\(self.tapCount))")
         }
 
+        let seq = dispatchSequence
+        dispatchSequence += 1
+        UboLog.audio.debug("mic dispatch #\(seq) sent")
         Task { [weak self] in
             guard let self else { return }
             do {
@@ -163,8 +176,9 @@ public final class MicCaptureService {
                     width: 2,
                     audioSource: self.audioSource
                 )
+                UboLog.audio.debug("mic dispatch #\(seq) completed")
             } catch {
-                UboLog.audio.error("reportAudioSample dispatch FAILED: \(error.localizedDescription)")
+                UboLog.audio.error("mic dispatch #\(seq) FAILED: reportAudioSample: \(error.localizedDescription)")
             }
         }
     }
