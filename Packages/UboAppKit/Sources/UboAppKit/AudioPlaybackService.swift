@@ -110,18 +110,31 @@ public final class AudioPlaybackService {
     struct SequenceState {
         var nextIndex: Int = 0
         var pending: [Int: (AudioSampleData, Float)] = [:]
+        /// When the gap at `nextIndex` was first observed still unfilled.
+        /// `nil` whenever nothing is currently stuck.
+        var stuckSince: Date?
     }
+
+    /// How long a gap at `nextIndex` can stay unfilled before giving up on
+    /// it and resuming from the next chunk actually received. Mirrors
+    /// Android's proven `SKIP_AHEAD_TIMEOUT_MS`
+    /// (`AudioPlaybackService.kt:290`) — a dropped (not merely delayed)
+    /// chunk would otherwise stall every later chunk in the reply forever.
+    static let skipAheadTimeout: TimeInterval = 5
 
     /// Pure reorder step: merge one chunk into `state` and return the
     /// chunks that are now ready to play, in order. `sample == nil` is
     /// used by the Python core as a terminator — it just advances the
     /// counter. `finished` means the sequence drained completely and its
     /// state can be dropped. Static + pure so unit tests can drive it.
+    /// `now` is injected (defaulting to the real clock) so tests can
+    /// deterministically exercise the skip-ahead timeout.
     nonisolated static func merge(
         index: Int,
         sample: AudioSampleData?,
         volume: Float,
-        into state: inout SequenceState
+        into state: inout SequenceState,
+        now: Date = Date()
     ) -> (ready: [(AudioSampleData, Float)], finished: Bool) {
         if let sample {
             state.pending[index] = (sample, volume)
@@ -129,10 +142,24 @@ public final class AudioPlaybackService {
             state.nextIndex += 1
         }
 
+        if state.pending[state.nextIndex] == nil, !state.pending.isEmpty {
+            if let stuckSince = state.stuckSince {
+                if now.timeIntervalSince(stuckSince) > skipAheadTimeout,
+                   let resumeAt = state.pending.keys.filter({ $0 > state.nextIndex }).min() {
+                    state.pending.keys.filter { $0 < resumeAt }.forEach { state.pending.removeValue(forKey: $0) }
+                    state.nextIndex = resumeAt
+                    state.stuckSince = nil
+                }
+            } else {
+                state.stuckSince = now
+            }
+        }
+
         var ready: [(AudioSampleData, Float)] = []
         while let chunk = state.pending.removeValue(forKey: state.nextIndex) {
             ready.append(chunk)
             state.nextIndex += 1
+            state.stuckSince = nil
         }
         return (ready, state.pending.isEmpty && sample == nil)
     }
@@ -146,7 +173,7 @@ public final class AudioPlaybackService {
         volume: Float
     ) {
         var state = sequences[id] ?? SequenceState()
-        let result = Self.merge(index: index, sample: sample, volume: volume, into: &state)
+        let result = Self.merge(index: index, sample: sample, volume: volume, into: &state, now: Date())
         for chunk in result.ready {
             schedule(sample: chunk.0, volume: chunk.1)
         }
