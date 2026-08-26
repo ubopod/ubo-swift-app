@@ -173,6 +173,29 @@ public final class DeviceViewModel {
             }
             .store(in: &cancellables)
 
+        // Reconcile the local `assistantListening` flag against
+        // server-authoritative state: the core can end (silence timeout,
+        // mute, stop-talking phrase) or start a session this client didn't
+        // itself trigger, and the local button-press flag would otherwise
+        // never learn about it. `mySourceId` is computed per-callback since
+        // `audioSourceId` isn't available until platforms that generate one
+        // have run their `UserDefaults` lookup, and tvOS has none.
+        client.$assistantServerListening
+            .sink { [weak self] state in
+                guard let self, let state else { return }
+                #if os(iOS) || os(macOS) || os(watchOS)
+                let mySourceId = self.audioSourceId
+                #else
+                let mySourceId = ""
+                #endif
+                self.assistantListening = Self.reconciledListening(
+                    serverIsListening: state.isListening,
+                    serverActiveAudioSource: state.activeAudioSource,
+                    mySourceId: mySourceId
+                )
+            }
+            .store(in: &cancellables)
+
         // Subscribe to system stats for continuous CPU/RAM/temperature updates
         client.$systemStats
             .sink { [weak self] stats in
@@ -434,6 +457,7 @@ public final class DeviceViewModel {
         client.startStatsSubscription()
         client.startInputsSubscription()
         client.startStackSubscription()
+        client.startAssistantStateSubscription()
         #if os(iOS) || os(macOS)
         client.cameraSourceId = cameraSourceId
         client.startCameraSubscription()
@@ -505,6 +529,20 @@ public final class DeviceViewModel {
     /// client's behalf.
     public var isAssistantListening: Bool { assistantListening }
 
+    /// Reconciles server-authoritative assistant state against this client's
+    /// own source id. `state.assistant.is_listening` is global — a *different*
+    /// client's session (or the Pi's own device-routed session, which sends
+    /// `active_audio_source == ""`) also sets it `true`, so this must AND it
+    /// with a source-id match rather than trusting `isListening` alone.
+    /// Pure + static so it's unit-testable without a live `UboClient`.
+    nonisolated static func reconciledListening(
+        serverIsListening: Bool,
+        serverActiveAudioSource: String,
+        mySourceId: String
+    ) -> Bool {
+        serverIsListening && serverActiveAudioSource == mySourceId
+    }
+
     /// Unified mic toggle used by every shell. Capture-capable platforms
     /// (iOS/macOS/watchOS) stream the local mic; tvOS dispatches a
     /// device-routed session with an empty `audio_source`, so the Pi's
@@ -554,7 +592,6 @@ public final class DeviceViewModel {
                     source: triggerSource
                 )
                 UboLog.audio.info("startAssistantListening dispatched ok")
-                assistantListening = true
             } catch {
                 UboLog.audio.error("startAssistantListening FAILED: \(error.localizedDescription)")
                 lastError = (error as? UboError) ?? .dispatchFailed(error)
@@ -562,9 +599,16 @@ public final class DeviceViewModel {
             }
             do {
                 try await micCapture.start(audioSource: source)
+                // Only now — mirrors the reconciliation subscription above:
+                // don't claim a live session if the mic engine never
+                // actually started, or the core would think a session is
+                // running while no audio is flowing.
+                assistantListening = true
             } catch {
                 UboLog.audio.error("micCapture.start FAILED: \(error.localizedDescription)")
                 lastError = (error as? UboError) ?? .dispatchFailed(error)
+                do { try await client.stopAssistantListening() }
+                catch { UboLog.audio.error("stopAssistantListening (rollback) failed: \(error.localizedDescription)") }
             }
         }
     }
