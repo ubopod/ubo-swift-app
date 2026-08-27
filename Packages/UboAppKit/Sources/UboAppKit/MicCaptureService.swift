@@ -40,15 +40,30 @@ public final class MicCaptureService {
     private var tapCount = 0
     private var sampleCount = 0
 
-    /// Validation instrumentation (temporary): a local monotonic counter
-    /// logged at dispatch and again at completion. `dispatch()` fires an
-    /// unstructured `Task` per chunk with no queue or ordering guarantee —
-    /// comparing send-order vs. completion-order in a captured device log
-    /// is a proxy for whether chunks are arriving at the core out of order
-    /// (not proof, since completion order isn't guaranteed to equal server
-    /// arrival order, but a reasonable signal for one-unary-RPC-per-chunk).
-    /// Remove once that's confirmed or ruled out on real hardware.
-    private var dispatchSequence: UInt64 = 0
+    /// One chunk queued for network dispatch: the converted PCM16 bytes plus
+    /// the elapsed-time timestamp captured alongside it.
+    private struct QueuedSample {
+        let data: Data
+        let timestamp: Float
+    }
+
+    /// Feeds `dispatch()`'s converted chunks to the single sender task below.
+    /// Unbounded, mirroring the Android phone client's `Channel` — capture
+    /// should never block on network speed, and audio is small enough per
+    /// session that unbounded backlog is a minor risk, not a real one (same
+    /// tradeoff already accepted there).
+    private var sampleContinuation: AsyncStream<QueuedSample>.Continuation?
+
+    /// Drains `sampleContinuation`'s stream one chunk at a time, awaiting
+    /// each `reportAudioSample` call before starting the next. Chunks were
+    /// previously dispatched as one unstructured `Task` each — with no cap
+    /// and no ordering guarantee — over watchOS's grpc-web transport (up to
+    /// 16 concurrent HTTP/1.1 connections), which measurably reordered
+    /// audio at the core and broke STT even though every chunk arrived.
+    /// Serializing to one in-flight request at a time, like ESP32's and
+    /// Android's proven single-sender designs, guarantees capture order is
+    /// preserved by construction instead of racing on the network.
+    private var senderTask: Task<Void, Never>?
 
     public init() {}
 
@@ -78,6 +93,8 @@ public final class MicCaptureService {
         UboLog.audio.info(
             "input format: rate=\(inputFormat.sampleRate) ch=\(inputFormat.channelCount); converter=\(self.converter == nil ? "NIL ⚠️" : "ok")"
         )
+
+        startSender()
 
         let bufferSize: AVAudioFrameCount = UboConstants.micTapBufferSize
         input.installTap(onBus: 0, bufferSize: bufferSize, format: inputFormat) { [weak self] buffer, _ in
@@ -109,7 +126,36 @@ public final class MicCaptureService {
         // would kill device audio after every push-to-talk cycle.
         AudioSessionCoordinator.restorePlayback()
         #endif
+        // Finish (don't cancel) so the sender drains whatever's already
+        // queued instead of dropping the last few chunks of the utterance.
+        sampleContinuation?.finish()
+        sampleContinuation = nil
+        senderTask = nil
         isRunning = false
+    }
+
+    /// Starts the single dedicated sender that drains queued chunks strictly
+    /// in capture order, one `reportAudioSample` RPC in flight at a time.
+    private func startSender() {
+        let (stream, continuation) = AsyncStream<QueuedSample>.makeStream()
+        sampleContinuation = continuation
+        senderTask = Task { [weak self] in
+            for await sample in stream {
+                guard let self else { return }
+                do {
+                    try await self.client?.reportAudioSample(
+                        timestamp: sample.timestamp,
+                        data: sample.data,
+                        channels: 1,
+                        rate: Int(UboConstants.micSampleRate),
+                        width: 2,
+                        audioSource: self.audioSource
+                    )
+                } catch {
+                    UboLog.audio.error("reportAudioSample dispatch FAILED: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 
     private func dispatch(buffer: AVAudioPCMBuffer, timestamp: Float) {
@@ -162,25 +208,7 @@ public final class MicCaptureService {
             UboLog.audio.debug("mic streaming: \(self.sampleCount) samples sent (taps=\(self.tapCount))")
         }
 
-        let seq = dispatchSequence
-        dispatchSequence += 1
-        UboLog.audio.debug("mic dispatch #\(seq) sent")
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                try await self.client?.reportAudioSample(
-                    timestamp: timestamp,
-                    data: data,
-                    channels: 1,
-                    rate: Int(UboConstants.micSampleRate),
-                    width: 2,
-                    audioSource: self.audioSource
-                )
-                UboLog.audio.debug("mic dispatch #\(seq) completed")
-            } catch {
-                UboLog.audio.error("mic dispatch #\(seq) FAILED: reportAudioSample: \(error.localizedDescription)")
-            }
-        }
+        sampleContinuation?.yield(QueuedSample(data: data, timestamp: timestamp))
     }
 
     private func requestMicPermission() async throws {
