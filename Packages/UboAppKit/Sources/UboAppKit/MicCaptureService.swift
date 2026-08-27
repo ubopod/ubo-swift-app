@@ -88,6 +88,21 @@ public final class MicCaptureService {
         #endif
 
         let input = engine.inputNode
+        // Engages Apple's voice-processing I/O unit — AGC, noise suppression,
+        // echo cancellation — on the raw input tap. Without it AVAudioEngine
+        // hands back whatever level the mic hardware happens to produce with
+        // no correction; confirmed on real Watch hardware to come in quiet
+        // enough (peak ~-30 to -34 dBFS) to intermittently fail both a VAD
+        // loudness gate and the VAD model's own speech-confidence score,
+        // while the exact same mic captured at raised volume passed both
+        // comfortably. Best-effort: log and continue capturing raw if the
+        // platform/OS version doesn't support it rather than failing capture
+        // entirely.
+        do {
+            try input.setVoiceProcessingEnabled(true)
+        } catch {
+            UboLog.audio.error("failed to enable input voice processing (AGC): \(error.localizedDescription)")
+        }
         let inputFormat = input.outputFormat(forBus: 0)
         converter = AVAudioConverter(from: inputFormat, to: targetFormat)
         UboLog.audio.info(
