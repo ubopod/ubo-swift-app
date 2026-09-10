@@ -40,6 +40,14 @@ public final class DeviceViewModel {
     /// assistant toggle, keyboard shortcut), so they can't desync.
     private(set) var assistantListening = false
 
+    /// True while a `toggleMicCapture()` call is still awaiting its RPC round
+    /// trip. `assistantListening` doesn't flip to `true` until that round
+    /// trip (plus `micCapture.start()`) completes, so a second tap on a slow
+    /// connection re-enters this function while it still reads `false` —
+    /// issuing a second, fully redundant `startAssistantListening` dispatch.
+    /// This rejects that second call outright instead of racing the first.
+    private var isTogglingMicCapture = false
+
     // Observable state - updated from client
     public private(set) var isConnecting: Bool = false
     public private(set) var isConnected: Bool = false
@@ -188,13 +196,63 @@ public final class DeviceViewModel {
                 #else
                 let mySourceId = ""
                 #endif
-                self.assistantListening = Self.reconciledListening(
+                let reconciled = Self.reconciledListening(
                     serverIsListening: state.isListening,
                     serverActiveAudioSource: state.activeAudioSource,
                     mySourceId: mySourceId
                 )
+                self.assistantListening = reconciled
+                #if os(iOS) || os(macOS) || os(watchOS)
+                // This flag update used to be the only effect here — the
+                // core ending a session on its own (silence timeout, mute,
+                // stop-talking phrase) updated the UI but never told
+                // `MicCaptureService` to actually stop, so the mic/audio
+                // session stayed claimed indefinitely with nothing left to
+                // release it (stuck listening indicator, Hey Siri blocked).
+                if !reconciled {
+                    self.micCapture.stop()
+                }
+                #endif
             }
             .store(in: &cancellables)
+
+        #if os(iOS) || os(watchOS)
+        // A session opened by anything other than this device (a test
+        // harness, the Web UI, a wake word heard on the pod) needs this
+        // event to actually open the mic — see `AssistantRequestMicStreamEvent`'s
+        // docstring in `ubo_app/store/services/assistant.py`. Never echo a
+        // listening action back here: the session is already open/closing
+        // server-side, this only drives the local capture engine to match.
+        client.micStreamRequestSubject
+            .sink { [weak self] request in
+                guard let self else { return }
+                switch Self.micStreamRequestAction(
+                    audioSource: request.audioSource,
+                    isActive: request.isActive,
+                    mySourceId: self.audioSourceId
+                ) {
+                case .ignore:
+                    return
+                case .start:
+                    Task { [weak self] in
+                        guard let self else { return }
+                        do {
+                            try await self.micCapture.start(audioSource: request.audioSource)
+                            self.assistantListening = true
+                            UboLog.audio.info("mic stream request: started (audioSource=\(request.audioSource))")
+                        } catch {
+                            UboLog.audio.error("mic stream request: micCapture.start FAILED: \(error.localizedDescription)")
+                            self.lastError = (error as? UboError) ?? .dispatchFailed(error)
+                        }
+                    }
+                case .stop:
+                    self.micCapture.stop()
+                    self.assistantListening = false
+                    UboLog.audio.info("mic stream request: stopped (audioSource=\(request.audioSource))")
+                }
+            }
+            .store(in: &cancellables)
+        #endif
 
         // Subscribe to system stats for continuous CPU/RAM/temperature updates
         client.$systemStats
@@ -470,6 +528,9 @@ public final class DeviceViewModel {
         audioPlayback.configure(client: client)
         audioPlayback.start()
         #endif
+        #if os(iOS) || os(watchOS)
+        client.startMicStreamRequestSubscription()
+        #endif
         wasConnected = true
     }
 
@@ -543,6 +604,26 @@ public final class DeviceViewModel {
         serverIsListening && serverActiveAudioSource == mySourceId
     }
 
+    /// What a `micStreamRequestSubject` event should do to local capture.
+    enum MicStreamRequestAction: Equatable {
+        /// Not addressed to this client — a request naming another source.
+        case ignore
+        case start
+        case stop
+    }
+
+    /// Decide the action for an `AssistantRequestMicStreamEvent`, filtering
+    /// by audio source. Pure so the audio-source-matching logic is testable
+    /// without a real `UboClient`/`MicCaptureService`.
+    nonisolated static func micStreamRequestAction(
+        audioSource: String,
+        isActive: Bool,
+        mySourceId: String
+    ) -> MicStreamRequestAction {
+        guard audioSource == mySourceId else { return .ignore }
+        return isActive ? .start : .stop
+    }
+
     /// Unified mic toggle used by every shell. Capture-capable platforms
     /// (iOS/macOS/watchOS) stream the local mic; tvOS dispatches a
     /// device-routed session with an empty `audio_source`, so the Pi's
@@ -579,6 +660,13 @@ public final class DeviceViewModel {
     /// `.wakePhrase(mode: .quickChat)` to have the device end the turn after
     /// its configured quick-chat silence window instead.
     public func toggleMicCapture(triggerSource: AssistantTriggerSource? = nil) async {
+        guard !isTogglingMicCapture else {
+            UboLog.audio.info("toggleMicCapture: ignored — a previous call is still in flight")
+            return
+        }
+        isTogglingMicCapture = true
+        defer { isTogglingMicCapture = false }
+
         if assistantListening {
             await stopAssistantSession()
         } else {
