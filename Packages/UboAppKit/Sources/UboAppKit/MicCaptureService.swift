@@ -74,61 +74,85 @@ public final class MicCaptureService {
     public func start(audioSource: String = "") async throws {
         guard !isRunning else { UboLog.audio.info("mic start ignored — already running"); return }
         guard client != nil else { UboLog.audio.error("mic start aborted — no client configured"); return }
+        // Claim `isRunning` synchronously, before the first `await` below —
+        // not at the end of this function. The setup below suspends at real
+        // await points (permission prompt, engine start), and while suspended
+        // this method's own `!isRunning` guard above is re-checkable by
+        // another concurrent call (e.g. a second button press racing this
+        // one's still-in-flight RPC round trip). Setting the flag late left
+        // that whole window open for two calls to both pass the guard and
+        // both try to configure the same `AVAudioEngine`/install the same
+        // tap — observed on real Watch hardware as ~30s of near-silent,
+        // undelivered audio right after a double press before things
+        // stabilized. Rolled back below if setup actually fails.
+        isRunning = true
         self.audioSource = audioSource
         tapCount = 0
         sampleCount = 0
         UboLog.audio.info("mic start requested (audioSource=\(audioSource.isEmpty ? "<empty/system>" : audioSource))")
 
-        try await requestMicPermission()
-        UboLog.audio.info("mic permission granted")
-
-        #if os(iOS) || os(watchOS)
-        // macOS has no AVAudioSession; AVAudioEngine drives the input node directly.
-        try AudioSessionCoordinator.activateCapture()
-        #endif
-
-        let input = engine.inputNode
-        // Engages Apple's voice-processing I/O unit — AGC, noise suppression,
-        // echo cancellation — on the raw input tap. Without it AVAudioEngine
-        // hands back whatever level the mic hardware happens to produce with
-        // no correction; confirmed on real Watch hardware to come in quiet
-        // enough (peak ~-30 to -34 dBFS) to intermittently fail both a VAD
-        // loudness gate and the VAD model's own speech-confidence score,
-        // while the exact same mic captured at raised volume passed both
-        // comfortably. Best-effort: log and continue capturing raw if the
-        // platform/OS version doesn't support it rather than failing capture
-        // entirely.
         do {
-            try input.setVoiceProcessingEnabled(true)
-        } catch {
-            UboLog.audio.error("failed to enable input voice processing (AGC): \(error.localizedDescription)")
-        }
-        let inputFormat = input.outputFormat(forBus: 0)
-        converter = AVAudioConverter(from: inputFormat, to: targetFormat)
-        UboLog.audio.info(
-            "input format: rate=\(inputFormat.sampleRate) ch=\(inputFormat.channelCount); converter=\(self.converter == nil ? "NIL ⚠️" : "ok")"
-        )
+            try await requestMicPermission()
+            UboLog.audio.info("mic permission granted")
 
-        startSender()
+            #if os(iOS) || os(watchOS)
+            // macOS has no AVAudioSession; AVAudioEngine drives the input node directly.
+            try AudioSessionCoordinator.activateCapture()
+            #endif
 
-        let bufferSize: AVAudioFrameCount = UboConstants.micTapBufferSize
-        input.installTap(onBus: 0, bufferSize: bufferSize, format: inputFormat) { [weak self] buffer, _ in
-            guard let self else { return }
-            let elapsed = Float(Date().timeIntervalSince(self.startedAt))
-            Task { @MainActor [weak self] in
-                self?.dispatch(buffer: buffer, timestamp: elapsed)
+            let input = engine.inputNode
+            // Voice-Processing I/O is a two-bus unit (bus 0 output, bus 1
+            // input) that needs a connected, running output path to
+            // reference — with none attached (this engine only ever
+            // captures) its render callback has nothing to satisfy and fails
+            // continuously ("auou/vpio/appl, render err: -1", spamming the
+            // console). Wiring the input to the main mixer, muted, and
+            // enabling voice processing only after that connection exists
+            // gives the render callback a real (silent) bus to fulfill. This
+            // does not enable actual echo cancellation against the app's
+            // spoken responses — those play through `AudioPlaybackService`'s
+            // separate engine, which this one has no way to reference.
+            engine.connect(input, to: engine.mainMixerNode, format: nil)
+            engine.mainMixerNode.outputVolume = 0
+            // Engages Apple's voice-processing I/O unit — AGC, noise
+            // suppression, echo cancellation — on the raw input tap. Without
+            // it AVAudioEngine hands back whatever level the mic hardware
+            // happens to produce with no correction; confirmed on real Watch
+            // hardware to come in quiet enough (peak ~-30 to -34 dBFS) to
+            // intermittently fail both a VAD loudness gate and the VAD
+            // model's own speech-confidence score, while the exact same mic
+            // captured at raised volume passed both comfortably. Best-effort:
+            // log and continue capturing raw if the platform/OS version
+            // doesn't support it rather than failing capture entirely.
+            do {
+                try input.setVoiceProcessingEnabled(true)
+            } catch {
+                UboLog.audio.error("failed to enable input voice processing (AGC): \(error.localizedDescription)")
             }
-        }
+            let inputFormat = input.outputFormat(forBus: 0)
+            converter = AVAudioConverter(from: inputFormat, to: targetFormat)
+            UboLog.audio.info(
+                "input format: rate=\(inputFormat.sampleRate) ch=\(inputFormat.channelCount); converter=\(self.converter == nil ? "NIL ⚠️" : "ok")"
+            )
 
-        engine.prepare()
-        startedAt = Date()
-        do {
+            let bufferSize: AVAudioFrameCount = UboConstants.micTapBufferSize
+            startedAt = Date()
+            input.installTap(onBus: 0, bufferSize: bufferSize, format: inputFormat) { [weak self] buffer, _ in
+                guard let self else { return }
+                let elapsed = Float(Date().timeIntervalSince(self.startedAt))
+                Task { @MainActor [weak self] in
+                    self?.dispatch(buffer: buffer, timestamp: elapsed)
+                }
+            }
+
+            engine.prepare()
             try engine.start()
         } catch {
-            UboLog.audio.error("engine.start() failed: \(error.localizedDescription)")
+            isRunning = false
             throw error
         }
-        isRunning = true
+
+        startSender()
         UboLog.audio.info("mic engine started — streaming to core")
     }
 
@@ -138,7 +162,12 @@ public final class MicCaptureService {
         engine.stop()
         #if os(iOS) || os(watchOS)
         // Hand the shared session back to playback — deactivating it here
-        // would kill device audio after every push-to-talk cycle.
+        // would kill device audio after every push-to-talk cycle. Releasing
+        // the mic/session promptly (rather than keeping it warm across
+        // sessions) is deliberate: holding `.playAndRecord` open between
+        // sessions blocks Hey Siri and leaves the system mic indicator
+        // showing, which reads as "always listening" — worse than paying the
+        // Voice-Processing I/O reconvergence cost on the next press.
         AudioSessionCoordinator.restorePlayback()
         #endif
         // Finish (don't cancel) so the sender drains whatever's already
